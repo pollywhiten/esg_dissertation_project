@@ -32,6 +32,10 @@ renv/
 
 # Keep directory structure
 !**/.gitkeep
+
+# Reference files (Python analysis - keep local only)
+ERD.txt
+ERD.py
 *.py
 *.html
 PROJECT_DOCUMENTATION.md
