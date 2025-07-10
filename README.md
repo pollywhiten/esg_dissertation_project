@@ -1,6 +1,6 @@
 # ESG Rating Changes and Stock Returns: A State Policy Analysis 📊🏛️📈
 
-[![Status](https://img.shields.io/badge/Status-Phase%202%20Data%20Processing%2080%25%20Complete-orange)](https://github.com/pollywhiten/esg_dissertation_project)
+[![Status](https://img.shields.io/badge/Status-Phase%202%20Complete%20→%20Phase%203%20Ready-brightgreen)](https://github.com/pollywhiten/esg_dissertation_project)
 [![R](https://img.shields.io/badge/R-4.5.1+-276DC3?style=flat&logo=r&logoColor=white)](https://www.r-project.org/)
 [![renv](https://img.shields.io/badge/renv-1.1.4-00599C?style=flat&logo=r&logoColor=white)](https://rstudio.github.io/renv/)
 [![tidyverse](https://img.shields.io/badge/tidyverse-2.0.0+-1A162D?style=flat&logo=tidyverse&logoColor=white)](https://www.tidyverse.org/)
@@ -162,27 +162,27 @@ sequenceDiagram
 | | Package Installation (21 packages) | ✅ | 100% |
 | | renv Reproducibility Setup | ✅ | 100% |
 | | Project Structure Verification | ✅ | 100% |
-| **📚 Phase 2** | Utility Functions | 🟡 In Progress | 80% |
+| **📚 Phase 2** | Utility Functions | ✅ Complete | 100% |
 | | Date Alignment Utils | ✅ | 100% |
 | | Forward Fill Functions | ✅ | 100% |
 | | Panel Construction | ✅ | 100% |
 | | Weighted Average Functions | ✅ | 100% |
-| | Regression Functions | ⏳ Pending | 0% |
-| | Plotting Themes | ⏳ Pending | 0% |
+| | Regression Functions | ✅ | 100% |
+| | Plotting Themes | ✅ | 100% |
 
 ### 🎯 **Current Focus:**
 
-- **Phase 2.5**: Implementing regression utility functions for Fama-French and panel econometric analysis
-- **Phase 2.6**: Creating plotting themes and visualization utilities for consistent output  
-- **README Documentation**: Maintaining up-to-date progress tracking and status badges
+- **Phase 3**: Data preparation and cleaning pipeline implementation
+- **Data Processing**: Setting up comprehensive ETL workflows for ESG, financial, and policy data
+- **Quality Assurance**: Implementing robust data validation and quality checks
 
 ### 📋 **Next Steps:**
 
-After completing Phase 2 utility functions:
+Phase 2 utilities are complete! Moving to core analysis pipeline:
 
-- **Phase 3**: Data preparation and cleaning pipeline setup
+- **Phase 3**: Data preparation and cleaning (6 scripts)
 - **Phase 4**: Feature engineering for ESG rating changes and policy interactions  
-- **Phase 5**: Replication analysis implementation
+- **Phase 5**: Replication analysis implementation (portfolio construction & regressions)
 
 ### Environment Metrics
 
@@ -190,7 +190,7 @@ After completing Phase 2 utility functions:
 - **Required Packages**: 21/21 installed ✅  
 - **Data Files**: 7/7 present (3.0GB total) ✅
 - **System Resources**: 24GB RAM, 12 CPU cores ✅
-- **Test Coverage**: Phase 2 data processing utilities - 100% pass rate ✅
+- **Test Coverage**: Phase 2 utility functions - 100% pass rate ✅
 
 ## 📁 Project Structure
 
@@ -212,8 +212,8 @@ esg_dissertation_project/
 │   ├── 01_functions/         # Utility functions
 │   │   ├── data_processing/   # ✅ Date alignment, forward fill, panel construction
 │   │   ├── portfolio/         # ✅ Weighted average functions
-│   │   ├── analysis/          # ⏳ Regression functions
-│   │   └── visualization/     # ⏳ Plotting themes
+│   │   ├── analysis/          # ✅ Regression functions
+│   │   └── visualization/     # ✅ Plotting themes & color palettes
 │   ├── 02_preparation/       # Data cleaning (Phase 3)
 │   ├── 03_feature_engineering/ # Feature creation (Phase 4)
 │   ├── 04_analysis/          # Main analysis (Phases 5-6)
@@ -226,7 +226,9 @@ esg_dissertation_project/
 │   ├── test_date_utils.R     # Date function tests
 │   ├── test_forward_fill.R   # Forward fill tests
 │   ├── test_panel_construction.R # Panel construction tests
-│   └── test_weighted_average.R # Weighted average tests
+│   ├── test_weighted_average.R # Weighted average tests
+│   ├── test_regression_functions.R # Regression function tests
+│   └── test_plotting_themes.R # Plotting theme tests
 ├── config.R                  # ✅ Global configuration
 ├── renv.lock                 # ✅ Package dependencies
 └── plan.md                   # 📋 Implementation roadmap
