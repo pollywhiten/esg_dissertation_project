@@ -1,0 +1,34 @@
+# R specific
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+*.Rproj
+.Rproj.user/
+
+# Data files (too large for git)
+00_data/raw/**/*.csv
+00_data/intermediate/**/*.rds
+00_data/cleaned/**/*.rds
+
+# Output files
+02_output/logs/*.txt
+02_output/**/*.png
+02_output/**/*.pdf
+
+# Temporary files
+*~
+*.tmp
+*.temp
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# renv
+renv/library/
+renv/staging/
+renv/python/
+
+# Keep directory structure
+!**/.gitkeep
