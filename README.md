@@ -1,6 +1,6 @@
 # ESG Rating Changes and Stock Returns: A State Policy Analysis 📊🏛️📈
 
-[![Status](https://img.shields.io/badge/Status-Phase%202%20Complete%20→%20Phase%203%20Ready-brightgreen)](https://github.com/pollywhiten/esg_dissertation_project)
+[![Status](https://img.shields.io/badge/Status-Phase%203%20Data%20Preparation%20In%20Progress-yellow)](https://github.com/pollywhiten/esg_dissertation_project)
 [![R](https://img.shields.io/badge/R-4.5.1+-276DC3?style=flat&logo=r&logoColor=white)](https://www.r-project.org/)
 [![renv](https://img.shields.io/badge/renv-1.1.4-00599C?style=flat&logo=r&logoColor=white)](https://rstudio.github.io/renv/)
 [![tidyverse](https://img.shields.io/badge/tidyverse-2.0.0+-1A162D?style=flat&logo=tidyverse&logoColor=white)](https://www.tidyverse.org/)
@@ -170,20 +170,29 @@ sequenceDiagram
 | | Weighted Average Functions | ✅ | 100% |
 | | Regression Functions | ✅ | 100% |
 | | Plotting Themes | ✅ | 100% |
+| **🧹 Phase 3** | Data Preparation | 🟡 In Progress | 33% |
+| | Clean Sustainalytics ESG Data | ✅ | 100% |
+| | Process Reference Data | ✅ | 100% |
+| | Clean Financial Data | ⏳ Pending | 0% |
+| | Process Fama-French Factors | ⏳ Pending | 0% |
+| | Clean Policy Data | ⏳ Pending | 0% |
+| | Validate Data Quality | ⏳ Pending | 0% |
 
 ### 🎯 **Current Focus:**
 
-- **Phase 3**: Data preparation and cleaning pipeline implementation
-- **Data Processing**: Setting up comprehensive ETL workflows for ESG, financial, and policy data
-- **Quality Assurance**: Implementing robust data validation and quality checks
+- **Phase 3**: Data preparation and cleaning pipeline implementation (33% complete)
+- **ESG Data Processing**: Successfully cleaned Sustainalytics data (25M+ records)
+- **Reference Mapping**: Created static EntityId-to-CUSIP linkage (92% coverage)
+- **Next Steps**: Financial data (CRSP/Compustat) and Fama-French factor processing
 
 ### 📋 **Next Steps:**
 
-Phase 2 utilities are complete! Moving to core analysis pipeline:
+Continuing Phase 3 data preparation pipeline:
 
-- **Phase 3**: Data preparation and cleaning (6 scripts)
-- **Phase 4**: Feature engineering for ESG rating changes and policy interactions  
-- **Phase 5**: Replication analysis implementation (portfolio construction & regressions)
+- **Phase 3.3**: Clean CRSP/Compustat financial data
+- **Phase 3.4**: Process Fama-French risk factors  
+- **Phase 3.5**: Integrate state policy data
+- **Phase 3.6**: Comprehensive data quality validation
 
 ### Environment Metrics
 
@@ -216,6 +225,12 @@ esg_dissertation_project/
 │   │   ├── analysis/          # ✅ Regression functions
 │   │   └── visualization/     # ✅ Plotting themes & color palettes
 │   ├── 02_preparation/       # Data cleaning (Phase 3)
+│   │   ├── 01-1_clean_sustainalytics.R  # ✅ ESG data processing
+│   │   ├── 01-2_process_reference_data.R # ✅ EntityId-CUSIP mapping  
+│   │   ├── 01-3_clean_financial_data.R   # ⏳ CRSP/Compustat processing
+│   │   ├── 01-4_process_ff_factors.R     # ⏳ Fama-French factors
+│   │   ├── 01-5_clean_policy_data.R      # ⏳ State policy integration
+│   │   └── 01-6_validate_data_quality.R  # ⏳ Data quality checks
 │   ├── 03_feature_engineering/ # Feature creation (Phase 4)
 │   ├── 04_analysis/          # Main analysis (Phases 5-6)
 │   └── 05_visuals/           # Visualization (Phase 8)
