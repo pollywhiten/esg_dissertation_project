@@ -25,10 +25,10 @@
 .DS_Store
 Thumbs.db
 
-# renv
-renv/library/
-renv/staging/
-renv/python/
+# renv - only track renv.lock, ignore everything else
+renv/
+!renv.lock
+*.lock.bak
 
 # Keep directory structure
 !**/.gitkeep
@@ -36,3 +36,4 @@ renv/python/
 *.html
 PROJECT_DOCUMENTATION.md
 *.csv
+plan.md
