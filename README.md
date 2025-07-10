@@ -7,6 +7,7 @@
 [![plm](https://img.shields.io/badge/plm-2.6.6+-4CAF50?style=flat)](https://cran.r-project.org/package=plm)
 [![Environment](https://img.shields.io/badge/Environment-Ready-brightgreen?style=flat)](./#environment-status)
 [![Tests](https://img.shields.io/badge/Tests-Phase%202%20Data%20Processing%20100%25%20Pass-brightgreen?style=flat)](./#testing)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 <div align="center">
   <img src="https://www.hdruk.ac.uk/wp-content/uploads/2024/04/2560px-Kings_College_London_logo.svg_.png" alt="King's College London" style="margin: 20px 0;">
@@ -34,8 +35,8 @@ A comprehensive replication and extension study examining how state-level enviro
 - [🧪 Testing](#-testing)
 - [📈 Analysis Components](#-analysis-components)
 - [📚 Methodology](#-methodology)
-- [🤝 Contributing](#-contributing)
 - [📜 License](#-license)
+- [🤝 Contributing](#-contributing)
 - [🙏 Acknowledgments](#-acknowledgments)
 
 ## 🎯 Project Overview
@@ -378,7 +379,23 @@ This is an academic dissertation project. For questions or collaboration:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Academic use is encouraged with proper citation.
+### Academic Citation
+
+If you use this code or methodology in your research, please cite:
+
+```bibtex
+@mastersthesis{whitenburgh2025esg,
+  author = {Whitenburgh, Pollyanna},
+  title = {ESG Rating Changes and Stock Returns: A State Policy Analysis},
+  school = {King's College London},
+  year = {2025},
+  type = {Masters Dissertation}
+}
+```
+
+### Data Attribution
+
+This project uses data from multiple proprietary and public sources. Please ensure proper attribution and licensing compliance when using this project with datasets.
 
 ## 🙏 Acknowledgments
 
