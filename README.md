@@ -1,12 +1,12 @@
 # ESG Rating Changes and Stock Returns: A State Policy Analysis 📊🏛️📈
 
-[![Status](https://img.shields.io/badge/Status-Phase%202%20Development-orange)](https://github.com/pollywhiten/esg_dissertation_project)
+[![Status](https://img.shields.io/badge/Status-Phase%202%20Data%20Processing%2080%25%20Complete-orange)](https://github.com/pollywhiten/esg_dissertation_project)
 [![R](https://img.shields.io/badge/R-4.5.1+-276DC3?style=flat&logo=r&logoColor=white)](https://www.r-project.org/)
 [![renv](https://img.shields.io/badge/renv-1.1.4-00599C?style=flat&logo=r&logoColor=white)](https://rstudio.github.io/renv/)
 [![tidyverse](https://img.shields.io/badge/tidyverse-2.0.0+-1A162D?style=flat&logo=tidyverse&logoColor=white)](https://www.tidyverse.org/)
 [![plm](https://img.shields.io/badge/plm-2.6.6+-4CAF50?style=flat)](https://cran.r-project.org/package=plm)
 [![Environment](https://img.shields.io/badge/Environment-Ready-brightgreen?style=flat)](./#environment-status)
-[![Tests](https://img.shields.io/badge/Tests-Phase%202.1%20Passed-brightgreen?style=flat)](./#testing)
+[![Tests](https://img.shields.io/badge/Tests-Phase%202%20Data%20Processing%20100%25%20Pass-brightgreen?style=flat)](./#testing)
 
 <div align="center">
   <img src="https://www.hdruk.ac.uk/wp-content/uploads/2024/04/2560px-Kings_College_London_logo.svg_.png" alt="King's College London" style="margin: 20px 0;">
@@ -162,23 +162,35 @@ sequenceDiagram
 | | Package Installation (21 packages) | ✅ | 100% |
 | | renv Reproducibility Setup | ✅ | 100% |
 | | Project Structure Verification | ✅ | 100% |
-| **📚 Phase 2** | Utility Functions | 🔄 In Progress | 20% |
+| **📚 Phase 2** | Utility Functions | 🟡 In Progress | 80% |
 | | Date Alignment Utils | ✅ | 100% |
-| | Forward Fill Functions | ⏳ | 0% |
-| | Panel Construction | ⏳ | 0% |
-| | Regression Functions | ⏳ | 0% |
+| | Forward Fill Functions | ✅ | 100% |
+| | Panel Construction | ✅ | 100% |
+| | Weighted Average Functions | ✅ | 100% |
+| | Regression Functions | ⏳ Pending | 0% |
+| | Plotting Themes | ⏳ Pending | 0% |
 
 ### 🎯 **Current Focus:**
-- **Phase 2.2**: Forward fill functions for handling missing values
-- **Phase 2.3**: Panel construction utilities for multi-index operations
-- **Phase 2.4**: Weighted average functions for portfolio analysis
 
-### 📈 **Environment Metrics:**
+- **Phase 2.5**: Implementing regression utility functions for Fama-French and panel econometric analysis
+- **Phase 2.6**: Creating plotting themes and visualization utilities for consistent output  
+- **README Documentation**: Maintaining up-to-date progress tracking and status badges
+
+### 📋 **Next Steps:**
+
+After completing Phase 2 utility functions:
+
+- **Phase 3**: Data preparation and cleaning pipeline setup
+- **Phase 4**: Feature engineering for ESG rating changes and policy interactions  
+- **Phase 5**: Replication analysis implementation
+
+### Environment Metrics
+
 - **R Version**: 4.5.1 ✅
-- **Required Packages**: 21/21 installed ✅
+- **Required Packages**: 21/21 installed ✅  
 - **Data Files**: 7/7 present (3.0GB total) ✅
 - **System Resources**: 24GB RAM, 12 CPU cores ✅
-- **Test Coverage**: Phase 2.1 functions - 100% pass rate ✅
+- **Test Coverage**: Phase 2 data processing utilities - 100% pass rate ✅
 
 ## 📁 Project Structure
 
@@ -198,9 +210,9 @@ esg_dissertation_project/
 │   │   ├── check_environment.R
 │   │   └── load_libraries.R
 │   ├── 01_functions/         # Utility functions
-│   │   ├── data_processing/   # ✅ Date alignment utils
+│   │   ├── data_processing/   # ✅ Date alignment, forward fill, panel construction
+│   │   ├── portfolio/         # ✅ Weighted average functions
 │   │   ├── analysis/          # ⏳ Regression functions
-│   │   ├── portfolio/         # ⏳ Portfolio construction
 │   │   └── visualization/     # ⏳ Plotting themes
 │   ├── 02_preparation/       # Data cleaning (Phase 3)
 │   ├── 03_feature_engineering/ # Feature creation (Phase 4)
@@ -210,8 +222,11 @@ esg_dissertation_project/
 │   ├── tables/               # Regression tables
 │   ├── figures/              # Charts and plots
 │   └── logs/                 # Processing logs
-├── tests/                    # ✅ Test suite
-│   └── test_date_utils.R     # Date function tests
+├── tests/                    # ✅ Comprehensive test suite
+│   ├── test_date_utils.R     # Date function tests
+│   ├── test_forward_fill.R   # Forward fill tests
+│   ├── test_panel_construction.R # Panel construction tests
+│   └── test_weighted_average.R # Weighted average tests
 ├── config.R                  # ✅ Global configuration
 ├── renv.lock                 # ✅ Package dependencies
 └── plan.md                   # 📋 Implementation roadmap
@@ -274,30 +289,44 @@ The project includes comprehensive testing for all utility functions:
 ### Running Tests
 
 ```r
-# Test specific utility functions
+# Test all completed utility functions
 source("tests/test_date_utils.R")
+source("tests/test_forward_fill.R")
+source("tests/test_panel_construction.R")
+source("tests/test_weighted_average.R")
 
 # Or run from command line
 Rscript tests/test_date_utils.R
+Rscript tests/test_forward_fill.R
+Rscript tests/test_panel_construction.R
+Rscript tests/test_weighted_average.R
 ```
 
 ### Current Test Coverage
 
-| Function | Test Scenarios | Status |
-|----------|---------------|--------|
+| Function Category | Test Scenarios | Status |
+|------------------|----------------|--------|
 | **Date Alignment** | 5 comprehensive tests | ✅ 100% Pass |
 | `floor_to_month_start()` | Edge cases, character input, leap years | ✅ |
 | `ceiling_to_month_end()` | Month boundaries, validation checks | ✅ |
+| **Forward Fill** | 6 comprehensive tests | ✅ 100% Pass |
+| `ffill_within_group()` | Missing values, edge cases, performance | ✅ |
+| **Panel Construction** | 5 comprehensive tests | ✅ 100% Pass |
+| `create_monthly_panel()` | Multi-entity panels, date handling | ✅ |
+| **Weighted Average** | 4 comprehensive tests | ✅ 100% Pass |
+| `calculate_weighted_mean()` | Missing weights, edge cases | ✅ |
 
-### Test Results (Phase 2.1)
+### Test Results (Phase 2 Data Processing)
 
 ```
 🧪 Testing Results Summary:
-✅ floor_to_month_start(): 100% validation passed
-✅ ceiling_to_month_end(): 100% validation passed  
-✅ Edge cases: Leap year handling confirmed
-✅ Input validation: Character conversion working
-✅ Performance: <1ms per operation
+✅ Date Alignment Utils: 100% validation passed
+✅ Forward Fill Functions: 100% validation passed  
+✅ Panel Construction: 100% validation passed
+✅ Weighted Average Functions: 100% validation passed
+✅ Edge cases: All scenarios handled correctly
+✅ Input validation: Robust error handling confirmed
+✅ Performance: <1ms per operation across all functions
 ```
 
 ## 📈 Analysis Components
