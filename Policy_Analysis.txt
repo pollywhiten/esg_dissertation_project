@@ -1,0 +1,2676 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# 🏛️ The Moderating Role of State Environmental Policy on ESG Rating Announcements\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### A Firm-Level Analysis of Stock Market Reactions\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "This notebook extends the findings from our replication of Shanaev & Ghimire (2022). Having established the baseline market reaction to ESG rating changes, we now investigate a new research question: **Does the stringency of a company's state-level environmental policy environment moderate the stock market's reaction to an ESG downgrade?**\n",
+    "\n",
+    "**Our Hypothesis:**\n",
+    "\n",
+    "We hypothesize that the negative stock return following an ESG downgrade will be **more severe** for firms headquartered in states with strong environmental policies. The rationale is that for these firms, an ESG failure represents a more material financial risk due to stricter regulations, higher potential litigation costs, and greater public scrutiny.\n",
+    "\n",
+    "**Methodology:**\n",
+    "\n",
+    "To test this, we will move from a portfolio-level analysis to a **firm-level panel regression**. We will test for a significant interaction effect between the downgrade event and a measure of state policy stringency.\n",
+    "\n",
+    "1.  **Load Data:** We will load the final analytical panel (`final_df`) created in the previous notebook and the new, manually collected state-level environmental policy data.\n",
+    "2.  **Merge Policy Data:** We will merge the state policy information with our main panel based on the company's headquarter state and the observation year.\n",
+    "3.  **Construct Variables:** We will create the necessary dummy and interaction variables for our regression model.\n",
+    "4.  **Run Panel Regressions:** We will estimate a firm-level panel regression model to test the significance of the interaction term, controlling for standard risk factors.\n",
+    "5.  **Interpret Results:** We will analyze the coefficient of the interaction term to confirm or reject our hypothesis.\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 📚 Initial Setup: Import Libraries\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "This cell imports all necessary libraries for data manipulation, regression analysis, and visualization.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import statsmodels.api as sm\n",
+    "from statsmodels.formula.api import ols\n",
+    "import matplotlib.pyplot as plt\n",
+    "import seaborn as sns\n",
+    "import warnings\n",
+    "\n",
+    "warnings.filterwarnings('ignore')\n",
+    "\n",
+    "# Set display and plotting options for a clean look\n",
+    "pd.set_option('display.max_columns', None)\n",
+    "pd.set_option('display.width', 1000)\n",
+    "plt.style.use('seaborn-v0_8-whitegrid')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 1. Load & Verify the Final Analytical Panel 📂\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "Our first step is to load the clean, merged dataset we created and saved from the previous replication notebook (`ERD.ipynb`). This file, `final_analytical_dataframe.csv`, contains all the necessary firm-month observations, including stock returns, ESG data, and risk factors. We will perform a quick check to ensure it loaded correctly.\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "--- Successfully loaded the final analytical dataframe ---\n",
+      "\n",
+      "Dataset Shape: (480285, 26)\n",
+      "\n",
+      "Data Info and Types:\n",
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 480285 entries, 0 to 480284\n",
+      "Data columns (total 26 columns):\n",
+      " #   Column                          Non-Null Count   Dtype         \n",
+      "---  ------                          --------------   -----         \n",
+      " 0   cusip                           480285 non-null  object        \n",
+      " 1   date                            480285 non-null  datetime64[ns]\n",
+      " 2   mth_ret                         480285 non-null  float64       \n",
+      " 3   mktcap_lag                      480247 non-null  float64       \n",
+      " 4   state_abbr                      449877 non-null  object        \n",
+      " 5   cusip8                          480285 non-null  object        \n",
+      " 6   entityid                        453748 non-null  float64       \n",
+      " 7   field_date                      453748 non-null  datetime64[ns]\n",
+      " 8   esg_risk_score                  385980 non-null  float64       \n",
+      " 9   esg_risk_category               480285 non-null  object        \n",
+      " 10  esg_risk_category_numeric       480285 non-null  float64       \n",
+      " 11  score_change                    480285 non-null  float64       \n",
+      " 12  score_direction                 480285 non-null  object        \n",
+      " 13  bulk_update                     480285 non-null  float64       \n",
+      " 14  CUSIP                           453748 non-null  object        \n",
+      " 15  Ticker                          453748 non-null  object        \n",
+      " 16  ISIN                            453748 non-null  object        \n",
+      " 17  Country                         453748 non-null  object        \n",
+      " 18  Region                          453748 non-null  object        \n",
+      " 19  mkt_rf                          480285 non-null  float64       \n",
+      " 20  smb                             480285 non-null  float64       \n",
+      " 21  hml                             480285 non-null  float64       \n",
+      " 22  rf                              480285 non-null  float64       \n",
+      " 23  mom                             480285 non-null  float64       \n",
+      " 24  ex_ret                          480285 non-null  float64       \n",
+      " 25  prev_esg_risk_category_numeric  475498 non-null  float64       \n",
+      "dtypes: datetime64[ns](2), float64(14), object(10)\n",
+      "memory usage: 95.3+ MB\n",
+      "\n",
+      "First 5 rows of the loaded data:\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.microsoft.datawrangler.viewer.v0+json": {
+       "columns": [
+        {
+         "name": "index",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "cusip",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "date",
+         "rawType": "datetime64[ns]",
+         "type": "datetime"
+        },
+        {
+         "name": "mth_ret",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "mktcap_lag",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "state_abbr",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "cusip8",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "entityid",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "field_date",
+         "rawType": "datetime64[ns]",
+         "type": "datetime"
+        },
+        {
+         "name": "esg_risk_score",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "esg_risk_category",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "esg_risk_category_numeric",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "score_change",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "score_direction",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "bulk_update",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "CUSIP",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "Ticker",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "ISIN",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "Country",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "Region",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "mkt_rf",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "smb",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "hml",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "rf",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "mom",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "ex_ret",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "prev_esg_risk_category_numeric",
+         "rawType": "float64",
+         "type": "float"
+        }
+       ],
+       "ref": "7d5547c4-3c94-494e-9ee6-b64b70dca8a6",
+       "rows": [
+        [
+         "0",
+         "00030710",
+         "2014-10-31 00:00:00",
+         "0.177297",
+         "382450.5",
+         "TN",
+         "00030710",
+         "1270625413.0",
+         "2014-10-01 00:00:00",
+         "38.1777016491",
+         "High",
+         "4.0",
+         "0.0",
+         "No Change",
+         "0.0",
+         "000307108",
+         "AAC",
+         "US0003071083",
+         "United States",
+         "United States and Canada",
+         "0.0250999999999999",
+         "0.0405",
+         "-0.0163",
+         "0.0",
+         "-0.0021",
+         "0.177297",
+         null
+        ],
+        [
+         "1",
+         "00030710",
+         "2014-11-30 00:00:00",
+         "0.325069",
+         "450257.94",
+         "TN",
+         "00030710",
+         "1270625413.0",
+         "2014-11-01 00:00:00",
+         "38.1777016491",
+         "High",
+         "4.0",
+         "0.0",
+         "No Change",
+         "0.0",
+         "000307108",
+         "AAC",
+         "US0003071083",
+         "United States",
+         "United States and Canada",
+         "0.0256",
+         "-0.0204999999999999",
+         "-0.0313",
+         "0.0",
+         "0.0069",
+         "0.325069",
+         "4.0"
+        ],
+        [
+         "2",
+         "00030710",
+         "2014-12-31 00:00:00",
+         "0.071379",
+         "608397.66",
+         "TN",
+         "00030710",
+         "1270625413.0",
+         "2014-12-01 00:00:00",
+         "38.1777016491",
+         "High",
+         "4.0",
+         "0.0",
+         "No Change",
+         "0.0",
+         "000307108",
+         "AAC",
+         "US0003071083",
+         "United States",
+         "United States and Canada",
+         "-0.0005",
+         "0.0253",
+         "0.0212",
+         "0.0",
+         "0.0103",
+         "0.071379",
+         "4.0"
+        ],
+        [
+         "3",
+         "00030710",
+         "2015-01-31 00:00:00",
+         "-0.174644",
+         "651824.52",
+         "TN",
+         "00030710",
+         "1270625413.0",
+         "2015-01-01 00:00:00",
+         "38.1777016491",
+         "High",
+         "4.0",
+         "0.0",
+         "No Change",
+         "0.0",
+         "000307108",
+         "AAC",
+         "US0003071083",
+         "United States",
+         "United States and Canada",
+         "-0.031",
+         "-0.0059",
+         "-0.0345",
+         "0.0",
+         "0.0374",
+         "-0.174644",
+         "4.0"
+        ],
+        [
+         "4",
+         "00030710",
+         "2015-02-28 00:00:00",
+         "0.410266",
+         "537987.12",
+         "TN",
+         "00030710",
+         "1270625413.0",
+         "2015-02-01 00:00:00",
+         "38.1777016491",
+         "High",
+         "4.0",
+         "0.0",
+         "No Change",
+         "0.0",
+         "000307108",
+         "AAC",
+         "US0003071083",
+         "United States",
+         "United States and Canada",
+         "0.0613",
+         "0.0060999999999999",
+         "-0.0179",
+         "0.0",
+         "-0.031",
+         "0.410266",
+         "4.0"
+        ]
+       ],
+       "shape": {
+        "columns": 26,
+        "rows": 5
+       }
+      },
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>cusip</th>\n",
+       "      <th>date</th>\n",
+       "      <th>mth_ret</th>\n",
+       "      <th>mktcap_lag</th>\n",
+       "      <th>state_abbr</th>\n",
+       "      <th>cusip8</th>\n",
+       "      <th>entityid</th>\n",
+       "      <th>field_date</th>\n",
+       "      <th>esg_risk_score</th>\n",
+       "      <th>esg_risk_category</th>\n",
+       "      <th>esg_risk_category_numeric</th>\n",
+       "      <th>score_change</th>\n",
+       "      <th>score_direction</th>\n",
+       "      <th>bulk_update</th>\n",
+       "      <th>CUSIP</th>\n",
+       "      <th>Ticker</th>\n",
+       "      <th>ISIN</th>\n",
+       "      <th>Country</th>\n",
+       "      <th>Region</th>\n",
+       "      <th>mkt_rf</th>\n",
+       "      <th>smb</th>\n",
+       "      <th>hml</th>\n",
+       "      <th>rf</th>\n",
+       "      <th>mom</th>\n",
+       "      <th>ex_ret</th>\n",
+       "      <th>prev_esg_risk_category_numeric</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2014-10-31</td>\n",
+       "      <td>0.177297</td>\n",
+       "      <td>382450.50</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>00030710</td>\n",
+       "      <td>1.270625e+09</td>\n",
+       "      <td>2014-10-01</td>\n",
+       "      <td>38.177702</td>\n",
+       "      <td>High</td>\n",
+       "      <td>4.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>No Change</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>000307108</td>\n",
+       "      <td>AAC</td>\n",
+       "      <td>US0003071083</td>\n",
+       "      <td>United States</td>\n",
+       "      <td>United States and Canada</td>\n",
+       "      <td>0.0251</td>\n",
+       "      <td>0.0405</td>\n",
+       "      <td>-0.0163</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0021</td>\n",
+       "      <td>0.177297</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2014-11-30</td>\n",
+       "      <td>0.325069</td>\n",
+       "      <td>450257.94</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>00030710</td>\n",
+       "      <td>1.270625e+09</td>\n",
+       "      <td>2014-11-01</td>\n",
+       "      <td>38.177702</td>\n",
+       "      <td>High</td>\n",
+       "      <td>4.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>No Change</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>000307108</td>\n",
+       "      <td>AAC</td>\n",
+       "      <td>US0003071083</td>\n",
+       "      <td>United States</td>\n",
+       "      <td>United States and Canada</td>\n",
+       "      <td>0.0256</td>\n",
+       "      <td>-0.0205</td>\n",
+       "      <td>-0.0313</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0069</td>\n",
+       "      <td>0.325069</td>\n",
+       "      <td>4.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2014-12-31</td>\n",
+       "      <td>0.071379</td>\n",
+       "      <td>608397.66</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>00030710</td>\n",
+       "      <td>1.270625e+09</td>\n",
+       "      <td>2014-12-01</td>\n",
+       "      <td>38.177702</td>\n",
+       "      <td>High</td>\n",
+       "      <td>4.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>No Change</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>000307108</td>\n",
+       "      <td>AAC</td>\n",
+       "      <td>US0003071083</td>\n",
+       "      <td>United States</td>\n",
+       "      <td>United States and Canada</td>\n",
+       "      <td>-0.0005</td>\n",
+       "      <td>0.0253</td>\n",
+       "      <td>0.0212</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0103</td>\n",
+       "      <td>0.071379</td>\n",
+       "      <td>4.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2015-01-31</td>\n",
+       "      <td>-0.174644</td>\n",
+       "      <td>651824.52</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>00030710</td>\n",
+       "      <td>1.270625e+09</td>\n",
+       "      <td>2015-01-01</td>\n",
+       "      <td>38.177702</td>\n",
+       "      <td>High</td>\n",
+       "      <td>4.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>No Change</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>000307108</td>\n",
+       "      <td>AAC</td>\n",
+       "      <td>US0003071083</td>\n",
+       "      <td>United States</td>\n",
+       "      <td>United States and Canada</td>\n",
+       "      <td>-0.0310</td>\n",
+       "      <td>-0.0059</td>\n",
+       "      <td>-0.0345</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0374</td>\n",
+       "      <td>-0.174644</td>\n",
+       "      <td>4.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2015-02-28</td>\n",
+       "      <td>0.410266</td>\n",
+       "      <td>537987.12</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>00030710</td>\n",
+       "      <td>1.270625e+09</td>\n",
+       "      <td>2015-02-01</td>\n",
+       "      <td>38.177702</td>\n",
+       "      <td>High</td>\n",
+       "      <td>4.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>No Change</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>000307108</td>\n",
+       "      <td>AAC</td>\n",
+       "      <td>US0003071083</td>\n",
+       "      <td>United States</td>\n",
+       "      <td>United States and Canada</td>\n",
+       "      <td>0.0613</td>\n",
+       "      <td>0.0061</td>\n",
+       "      <td>-0.0179</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0310</td>\n",
+       "      <td>0.410266</td>\n",
+       "      <td>4.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "      cusip       date   mth_ret  mktcap_lag state_abbr    cusip8      entityid field_date  esg_risk_score esg_risk_category  esg_risk_category_numeric  score_change score_direction  bulk_update      CUSIP Ticker          ISIN        Country                    Region  mkt_rf     smb     hml   rf     mom    ex_ret  prev_esg_risk_category_numeric\n",
+       "0  00030710 2014-10-31  0.177297   382450.50         TN  00030710  1.270625e+09 2014-10-01       38.177702              High                        4.0           0.0       No Change          0.0  000307108    AAC  US0003071083  United States  United States and Canada  0.0251  0.0405 -0.0163  0.0 -0.0021  0.177297                             NaN\n",
+       "1  00030710 2014-11-30  0.325069   450257.94         TN  00030710  1.270625e+09 2014-11-01       38.177702              High                        4.0           0.0       No Change          0.0  000307108    AAC  US0003071083  United States  United States and Canada  0.0256 -0.0205 -0.0313  0.0  0.0069  0.325069                             4.0\n",
+       "2  00030710 2014-12-31  0.071379   608397.66         TN  00030710  1.270625e+09 2014-12-01       38.177702              High                        4.0           0.0       No Change          0.0  000307108    AAC  US0003071083  United States  United States and Canada -0.0005  0.0253  0.0212  0.0  0.0103  0.071379                             4.0\n",
+       "3  00030710 2015-01-31 -0.174644   651824.52         TN  00030710  1.270625e+09 2015-01-01       38.177702              High                        4.0           0.0       No Change          0.0  000307108    AAC  US0003071083  United States  United States and Canada -0.0310 -0.0059 -0.0345  0.0  0.0374 -0.174644                             4.0\n",
+       "4  00030710 2015-02-28  0.410266   537987.12         TN  00030710  1.270625e+09 2015-02-01       38.177702              High                        4.0           0.0       No Change          0.0  000307108    AAC  US0003071083  United States  United States and Canada  0.0613  0.0061 -0.0179  0.0 -0.0310  0.410266                             4.0"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "# Define the file path\n",
+    "panel_data_path = \"final_analytical_dataframe.csv\"\n",
+    "\n",
+    "# Load the dataset. It's crucial to parse the 'date' column correctly.\n",
+    "try:\n",
+    "    final_df = pd.read_csv(panel_data_path, parse_dates=['date', 'field_date'])\n",
+    "    print(\"--- Successfully loaded the final analytical dataframe ---\")\n",
+    "    \n",
+    "    # --- Verification Checks ---\n",
+    "    print(f\"\\nDataset Shape: {final_df.shape}\")\n",
+    "    print(\"\\nData Info and Types:\")\n",
+    "    final_df.info()\n",
+    "    \n",
+    "    print(\"\\nFirst 5 rows of the loaded data:\")\n",
+    "    display(final_df.head())\n",
+    "    \n",
+    "except FileNotFoundError:\n",
+    "    print(f\"--- ERROR: The file was not found at '{panel_data_path}' ---\")\n",
+    "    print(\"Please make sure you have run the previous notebook (ERD.ipynb) and saved the final dataframe.\")\n",
+    "    final_df = pd.DataFrame() # Create an empty df to prevent further errors"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 2. Load and Merge State Policy Data 🏛️\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Having loaded our primary financial and ESG data, the next critical step is to integrate our measure of state-level environmental policy stringency. We will use the **ACEEE State Energy Efficiency Scorecard rankings** as a proxy for this policy environment."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Methodology for Handling Policy Data\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The ACEEE Scorecard is published biennially, resulting in data gaps for intermittent years (e.g., 2021, 2023). To create a continuous annual panel of policy data, we will employ a **forward-fill** methodology. This means that for any year without a new report, we will carry forward the rank from the most recent prior year. This approach is standard practice for slowly-evolving variables and avoids look-ahead bias by ensuring we only use information that was publicly available at that point in time.\n",
+    "\n",
+    "The process is as follows:\n",
+    "1.  **Load** the `state_policy_rankings.csv` file containing the rankings you compiled.\n",
+    "2.  **Create a complete annual panel** for every state and every year in our sample's time frame.\n",
+    "3.  **Forward-fill (`ffill`)** the ranking and policy strength indicator columns to fill the gaps for the missing years.\n",
+    "4.  **Acquire and merge state-of-headquarters data.** This is a critical data acquisition step to link each firm (by `cusip8`) to its home state.\n",
+    "5.  **Merge** the complete, forward-filled policy data into our main `final_df` dataframe based on the firm's state and the observation year."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "--- Successfully loaded the ACEEE state policy rankings ---\n",
+      "\n",
+      "Raw Dataset Shape: (816, 9)\n",
+      "\n",
+      "Years covered in raw data: [np.int64(2007), np.int64(2008), np.int64(2009), np.int64(2010), np.int64(2011), np.int64(2012), np.int64(2013), np.int64(2014), np.int64(2015), np.int64(2016), np.int64(2017), np.int64(2018), np.int64(2019), np.int64(2020), np.int64(2022), np.int64(2025)]\n",
+      "\n",
+      "First 5 rows of the loaded policy data:\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.microsoft.datawrangler.viewer.v0+json": {
+       "columns": [
+        {
+         "name": "index",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "State",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "Year",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "Rank",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "State_Abbrev",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "Strong_Policy_Top10",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "Strong_Policy_Top15",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "Strong_Policy_Top20",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "Policy_Quartile",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "Strong_Policy_Binary",
+         "rawType": "object",
+         "type": "string"
+        }
+       ],
+       "ref": "084fe4dc-3310-48b8-8c49-d968073d6d2b",
+       "rows": [
+        [
+         "0",
+         "Vermont",
+         "2007",
+         "1",
+         "VT",
+         "1",
+         "1",
+         "1",
+         "Q1_Strongest",
+         "Strong"
+        ],
+        [
+         "1",
+         "Connecticut",
+         "2007",
+         "1",
+         "CT",
+         "1",
+         "1",
+         "1",
+         "Q1_Strongest",
+         "Strong"
+        ],
+        [
+         "2",
+         "California",
+         "2007",
+         "3",
+         "CA",
+         "1",
+         "1",
+         "1",
+         "Q1_Strongest",
+         "Strong"
+        ],
+        [
+         "3",
+         "Massachusetts",
+         "2007",
+         "4",
+         "MA",
+         "1",
+         "1",
+         "1",
+         "Q1_Strongest",
+         "Strong"
+        ],
+        [
+         "4",
+         "Oregon",
+         "2007",
+         "5",
+         "OR",
+         "1",
+         "1",
+         "1",
+         "Q1_Strongest",
+         "Strong"
+        ]
+       ],
+       "shape": {
+        "columns": 9,
+        "rows": 5
+       }
+      },
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>State</th>\n",
+       "      <th>Year</th>\n",
+       "      <th>Rank</th>\n",
+       "      <th>State_Abbrev</th>\n",
+       "      <th>Strong_Policy_Top10</th>\n",
+       "      <th>Strong_Policy_Top15</th>\n",
+       "      <th>Strong_Policy_Top20</th>\n",
+       "      <th>Policy_Quartile</th>\n",
+       "      <th>Strong_Policy_Binary</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>Vermont</td>\n",
+       "      <td>2007</td>\n",
+       "      <td>1</td>\n",
+       "      <td>VT</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>Q1_Strongest</td>\n",
+       "      <td>Strong</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>Connecticut</td>\n",
+       "      <td>2007</td>\n",
+       "      <td>1</td>\n",
+       "      <td>CT</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>Q1_Strongest</td>\n",
+       "      <td>Strong</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>California</td>\n",
+       "      <td>2007</td>\n",
+       "      <td>3</td>\n",
+       "      <td>CA</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>Q1_Strongest</td>\n",
+       "      <td>Strong</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>Massachusetts</td>\n",
+       "      <td>2007</td>\n",
+       "      <td>4</td>\n",
+       "      <td>MA</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>Q1_Strongest</td>\n",
+       "      <td>Strong</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Oregon</td>\n",
+       "      <td>2007</td>\n",
+       "      <td>5</td>\n",
+       "      <td>OR</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>Q1_Strongest</td>\n",
+       "      <td>Strong</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "           State  Year  Rank State_Abbrev  Strong_Policy_Top10  Strong_Policy_Top15  Strong_Policy_Top20 Policy_Quartile Strong_Policy_Binary\n",
+       "0        Vermont  2007     1           VT                    1                    1                    1    Q1_Strongest               Strong\n",
+       "1    Connecticut  2007     1           CT                    1                    1                    1    Q1_Strongest               Strong\n",
+       "2     California  2007     3           CA                    1                    1                    1    Q1_Strongest               Strong\n",
+       "3  Massachusetts  2007     4           MA                    1                    1                    1    Q1_Strongest               Strong\n",
+       "4         Oregon  2007     5           OR                    1                    1                    1    Q1_Strongest               Strong"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "policy_data_path = \"state_policy_rankings.csv\"\n",
+    "\n",
+    "try:\n",
+    "    state_policy_df = pd.read_csv(policy_data_path)\n",
+    "    print(\"--- Successfully loaded the ACEEE state policy rankings ---\")\n",
+    "    \n",
+    "    # --- Verification Checks ---\n",
+    "    print(f\"\\nRaw Dataset Shape: {state_policy_df.shape}\")\n",
+    "    print(\"\\nYears covered in raw data:\", sorted(state_policy_df['Year'].unique()))\n",
+    "    \n",
+    "    print(\"\\nFirst 5 rows of the loaded policy data:\")\n",
+    "    display(state_policy_df.head())\n",
+    "    \n",
+    "except FileNotFoundError:\n",
+    "    print(f\"--- ERROR: The file '{policy_data_path}' was not found. ---\")\n",
+    "    print(\"Please ensure you have created and saved the state policy rankings CSV file.\")\n",
+    "    state_policy_df = pd.DataFrame() # Create an empty df to prevent further errors"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now, we address the missing years by creating a complete panel and forward-filling the values."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "--- Forward-filled State Policy Data ---\n",
+      "Shape after forward-filling: (765, 9)\n",
+      "\n",
+      "Verifying the fill for California (note how 2021 is filled with 2020 data):\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.microsoft.datawrangler.viewer.v0+json": {
+       "columns": [
+        {
+         "name": "index",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "State_Abbrev",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "Year",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "State",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "Rank",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "Strong_Policy_Top10",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "Strong_Policy_Top15",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "Strong_Policy_Top20",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "Policy_Quartile",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "Strong_Policy_Binary",
+         "rawType": "object",
+         "type": "string"
+        }
+       ],
+       "ref": "475c0054-0dbb-47e6-a1a6-a0af52452d7a",
+       "rows": [
+        [
+         "39",
+         "CA",
+         "2019",
+         "California",
+         "2.0",
+         "1.0",
+         "1.0",
+         "1.0",
+         "Q1_Strongest",
+         "Strong"
+        ],
+        [
+         "40",
+         "CA",
+         "2020",
+         "California",
+         "1.0",
+         "1.0",
+         "1.0",
+         "1.0",
+         "Q1_Strongest",
+         "Strong"
+        ],
+        [
+         "41",
+         "CA",
+         "2021",
+         "California",
+         "1.0",
+         "1.0",
+         "1.0",
+         "1.0",
+         "Q1_Strongest",
+         "Strong"
+        ],
+        [
+         "42",
+         "CA",
+         "2022",
+         "California",
+         "1.0",
+         "1.0",
+         "1.0",
+         "1.0",
+         "Q1_Strongest",
+         "Strong"
+        ],
+        [
+         "43",
+         "CA",
+         "2023",
+         "California",
+         "1.0",
+         "1.0",
+         "1.0",
+         "1.0",
+         "Q1_Strongest",
+         "Strong"
+        ],
+        [
+         "44",
+         "CA",
+         "2024",
+         "California",
+         "1.0",
+         "1.0",
+         "1.0",
+         "1.0",
+         "Q1_Strongest",
+         "Strong"
+        ]
+       ],
+       "shape": {
+        "columns": 9,
+        "rows": 6
+       }
+      },
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>State_Abbrev</th>\n",
+       "      <th>Year</th>\n",
+       "      <th>State</th>\n",
+       "      <th>Rank</th>\n",
+       "      <th>Strong_Policy_Top10</th>\n",
+       "      <th>Strong_Policy_Top15</th>\n",
+       "      <th>Strong_Policy_Top20</th>\n",
+       "      <th>Policy_Quartile</th>\n",
+       "      <th>Strong_Policy_Binary</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>39</th>\n",
+       "      <td>CA</td>\n",
+       "      <td>2019</td>\n",
+       "      <td>California</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>Q1_Strongest</td>\n",
+       "      <td>Strong</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>40</th>\n",
+       "      <td>CA</td>\n",
+       "      <td>2020</td>\n",
+       "      <td>California</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>Q1_Strongest</td>\n",
+       "      <td>Strong</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>41</th>\n",
+       "      <td>CA</td>\n",
+       "      <td>2021</td>\n",
+       "      <td>California</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>Q1_Strongest</td>\n",
+       "      <td>Strong</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>42</th>\n",
+       "      <td>CA</td>\n",
+       "      <td>2022</td>\n",
+       "      <td>California</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>Q1_Strongest</td>\n",
+       "      <td>Strong</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>43</th>\n",
+       "      <td>CA</td>\n",
+       "      <td>2023</td>\n",
+       "      <td>California</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>Q1_Strongest</td>\n",
+       "      <td>Strong</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>44</th>\n",
+       "      <td>CA</td>\n",
+       "      <td>2024</td>\n",
+       "      <td>California</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>Q1_Strongest</td>\n",
+       "      <td>Strong</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   State_Abbrev  Year       State  Rank  Strong_Policy_Top10  Strong_Policy_Top15  Strong_Policy_Top20 Policy_Quartile Strong_Policy_Binary\n",
+       "39           CA  2019  California   2.0                  1.0                  1.0                  1.0    Q1_Strongest               Strong\n",
+       "40           CA  2020  California   1.0                  1.0                  1.0                  1.0    Q1_Strongest               Strong\n",
+       "41           CA  2021  California   1.0                  1.0                  1.0                  1.0    Q1_Strongest               Strong\n",
+       "42           CA  2022  California   1.0                  1.0                  1.0                  1.0    Q1_Strongest               Strong\n",
+       "43           CA  2023  California   1.0                  1.0                  1.0                  1.0    Q1_Strongest               Strong\n",
+       "44           CA  2024  California   1.0                  1.0                  1.0                  1.0    Q1_Strongest               Strong"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "if not state_policy_df.empty:\n",
+    "    # Determine the full range of states and years needed\n",
+    "    all_states = state_policy_df['State_Abbrev'].unique()\n",
+    "    # We create a year column in final_df to get the full time range of our study\n",
+    "    final_df['year'] = final_df['date'].dt.year\n",
+    "    all_years = pd.RangeIndex(start=final_df['year'].min(), stop=final_df['year'].max() + 1, name='Year')\n",
+    "\n",
+    "    # Create a complete multi-index with every state for every year\n",
+    "    multi_index = pd.MultiIndex.from_product([all_states, all_years], names=['State_Abbrev', 'Year'])\n",
+    "\n",
+    "    # Reindex our policy dataframe to this complete index. This creates rows with NaNs for missing years.\n",
+    "    state_policy_df_complete = state_policy_df.set_index(['State_Abbrev', 'Year']).reindex(multi_index).reset_index()\n",
+    "\n",
+    "    # Group by each state and forward-fill the NaNs\n",
+    "    policy_cols_to_fill = ['State', 'Rank', 'Strong_Policy_Top10', 'Strong_Policy_Top15', 'Strong_Policy_Top20', 'Policy_Quartile', 'Strong_Policy_Binary']\n",
+    "    state_policy_df_filled_cols = state_policy_df_complete.groupby('State_Abbrev')[policy_cols_to_fill].ffill()\n",
+    "\n",
+    "    # Combine the filled columns back with the index columns\n",
+    "    state_policy_df_final = pd.concat([state_policy_df_complete[['State_Abbrev', 'Year']], state_policy_df_filled_cols], axis=1)\n",
+    "\n",
+    "    # --- Verification ---\n",
+    "    print(\"--- Forward-filled State Policy Data ---\")\n",
+    "    print(f\"Shape after forward-filling: {state_policy_df_final.shape}\")\n",
+    "    print(\"\\nVerifying the fill for California (note how 2021 is filled with 2020 data):\")\n",
+    "    display(state_policy_df_final[state_policy_df_final['State_Abbrev'] == 'CA'].tail(6))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "**Analysis of the Output:**\n",
+    "\n",
+    "*   **Forward-Fill Success:** The verification for California clearly shows the logic worked. The rank from 2020 (Rank 1.0) was correctly carried forward to fill the `NaN` for 2021. The same happened for 2023 and 2024, which were filled with the 2022 rank. This is exactly what we needed.\n",
+    "*   **Ready to Merge:** This clean, filled `state_policy_df_final` is now ready to be merged into your main analytical dataframe.\n",
+    "\n",
+    "Since you we already successfully added the `state_abbr` column to `final_df`, we can now confidently proceed with the final merge."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# We already have `final_df` with the 'state_abbr' and 'year' columns from the first notebook.\n",
+    "# Now we merge with our new, complete policy dataframe.\n",
+    "final_df_with_policy = pd.merge(\n",
+    "    final_df,\n",
+    "    state_policy_df_final,\n",
+    "    left_on=['state_abbr', 'year'],\n",
+    "    right_on=['State_Abbrev', 'Year'],\n",
+    "    how='left'  # Use a left merge to keep all firm observations\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Clean up redundant/unnecessary columns from the merge\n",
+    "columns_to_drop = ['State', 'State_Abbrev', 'Year']\n",
+    "final_df_with_policy.drop(columns=columns_to_drop, inplace=True, errors='ignore')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "--- Successfully Merged State Policy Data ---\n",
+      "Shape of final panel with policy data: (480285, 33)\n",
+      "\n",
+      "Columns now include policy ranks:\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.microsoft.datawrangler.viewer.v0+json": {
+       "columns": [
+        {
+         "name": "index",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "cusip8",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "date",
+         "rawType": "datetime64[ns]",
+         "type": "datetime"
+        },
+        {
+         "name": "state_abbr",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "Rank",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "Strong_Policy_Top10",
+         "rawType": "float64",
+         "type": "float"
+        }
+       ],
+       "ref": "0e0bf905-bc4c-4f6d-a59e-2b8b2687ad2e",
+       "rows": [
+        [
+         "0",
+         "00030710",
+         "2014-10-31 00:00:00",
+         "TN",
+         "38.0",
+         "0.0"
+        ],
+        [
+         "1",
+         "00030710",
+         "2014-11-30 00:00:00",
+         "TN",
+         "38.0",
+         "0.0"
+        ],
+        [
+         "2",
+         "00030710",
+         "2014-12-31 00:00:00",
+         "TN",
+         "38.0",
+         "0.0"
+        ],
+        [
+         "3",
+         "00030710",
+         "2015-01-31 00:00:00",
+         "TN",
+         "31.0",
+         "0.0"
+        ],
+        [
+         "4",
+         "00030710",
+         "2015-02-28 00:00:00",
+         "TN",
+         "31.0",
+         "0.0"
+        ]
+       ],
+       "shape": {
+        "columns": 5,
+        "rows": 5
+       }
+      },
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>cusip8</th>\n",
+       "      <th>date</th>\n",
+       "      <th>state_abbr</th>\n",
+       "      <th>Rank</th>\n",
+       "      <th>Strong_Policy_Top10</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2014-10-31</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>38.0</td>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2014-11-30</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>38.0</td>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2014-12-31</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>38.0</td>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2015-01-31</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>31.0</td>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2015-02-28</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>31.0</td>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "     cusip8       date state_abbr  Rank  Strong_Policy_Top10\n",
+       "0  00030710 2014-10-31         TN  38.0                  0.0\n",
+       "1  00030710 2014-11-30         TN  38.0                  0.0\n",
+       "2  00030710 2014-12-31         TN  38.0                  0.0\n",
+       "3  00030710 2015-01-31         TN  31.0                  0.0\n",
+       "4  00030710 2015-02-28         TN  31.0                  0.0"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "Number of firm-month observations with missing Rank data: 46916 (out of 480285)\n",
+      "Note: Missing ranks can occur if a firm's state is not in the ACEEE data (e.g., non-US firms) or from merge issues.\n"
+     ]
+    }
+   ],
+   "source": [
+    "# --- Verification ---\n",
+    "print(\"\\n--- Successfully Merged State Policy Data ---\")\n",
+    "print(f\"Shape of final panel with policy data: {final_df_with_policy.shape}\")\n",
+    "print(\"\\nColumns now include policy ranks:\")\n",
+    "\n",
+    "# Display key columns including the newly merged ones\n",
+    "display_cols = ['cusip8', 'date', 'state_abbr', 'Rank', 'Strong_Policy_Top10']\n",
+    "display(final_df_with_policy[display_cols].head())\n",
+    "\n",
+    "# Check for missing policy data after the merge\n",
+    "missing_ranks = final_df_with_policy['Rank'].isna().sum()\n",
+    "print(f\"\\nNumber of firm-month observations with missing Rank data: {missing_ranks} (out of {len(final_df_with_policy)})\")\n",
+    "if missing_ranks > 0:\n",
+    "    print(\"Note: Missing ranks can occur if a firm's state is not in the ACEEE data (e.g., non-US firms) or from merge issues.\")\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 3. Load and Merge RPS Policy Data ♻️"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now we will load the `state_rps_panel_1990_2024.csv` file you created. This provides our second, alternative measure of policy stringency. We will then merge it into our main analytical dataframe, which already contains the ACEEE rankings."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "--- Successfully loaded the RPS policy data ---\n",
+      "\n",
+      "--- Successfully Merged RPS Data into Main Panel ---\n",
+      "Shape of final panel remains: (480285, 34)\n",
+      "Observations with missing RPS data: 46916\n",
+      "\n",
+      "Displaying key columns with both policy measures:\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.microsoft.datawrangler.viewer.v0+json": {
+       "columns": [
+        {
+         "name": "index",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "cusip8",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "date",
+         "rawType": "datetime64[ns]",
+         "type": "datetime"
+        },
+        {
+         "name": "state_abbr",
+         "rawType": "object",
+         "type": "string"
+        },
+        {
+         "name": "Rank",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "has_rps",
+         "rawType": "float64",
+         "type": "float"
+        }
+       ],
+       "ref": "65a207de-dc6c-424d-801c-c230c063430a",
+       "rows": [
+        [
+         "0",
+         "00030710",
+         "2014-10-31 00:00:00",
+         "TN",
+         "38.0",
+         "1.0"
+        ],
+        [
+         "1",
+         "00030710",
+         "2014-11-30 00:00:00",
+         "TN",
+         "38.0",
+         "1.0"
+        ],
+        [
+         "2",
+         "00030710",
+         "2014-12-31 00:00:00",
+         "TN",
+         "38.0",
+         "1.0"
+        ],
+        [
+         "3",
+         "00030710",
+         "2015-01-31 00:00:00",
+         "TN",
+         "31.0",
+         "1.0"
+        ],
+        [
+         "4",
+         "00030710",
+         "2015-02-28 00:00:00",
+         "TN",
+         "31.0",
+         "1.0"
+        ]
+       ],
+       "shape": {
+        "columns": 5,
+        "rows": 5
+       }
+      },
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>cusip8</th>\n",
+       "      <th>date</th>\n",
+       "      <th>state_abbr</th>\n",
+       "      <th>Rank</th>\n",
+       "      <th>has_rps</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2014-10-31</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>38.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2014-11-30</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>38.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2014-12-31</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>38.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2015-01-31</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>31.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>00030710</td>\n",
+       "      <td>2015-02-28</td>\n",
+       "      <td>TN</td>\n",
+       "      <td>31.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "     cusip8       date state_abbr  Rank  has_rps\n",
+       "0  00030710 2014-10-31         TN  38.0      1.0\n",
+       "1  00030710 2014-11-30         TN  38.0      1.0\n",
+       "2  00030710 2014-12-31         TN  38.0      1.0\n",
+       "3  00030710 2015-01-31         TN  31.0      1.0\n",
+       "4  00030710 2015-02-28         TN  31.0      1.0"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "# Define the file path for the RPS data\n",
+    "rps_data_path = \"state_rps_panel_1990_2024.csv\"\n",
+    "\n",
+    "try:\n",
+    "    rps_df = pd.read_csv(rps_data_path)\n",
+    "    print(\"--- Successfully loaded the RPS policy data ---\")\n",
+    "    \n",
+    "    # --- Merge RPS data into our main dataframe ---\n",
+    "    # The keys are the state abbreviation and the year.\n",
+    "    final_df_with_policy = pd.merge(\n",
+    "        final_df_with_policy,\n",
+    "        rps_df,\n",
+    "        on=['state_abbr', 'year'],\n",
+    "        how='left'\n",
+    "    )\n",
+    "\n",
+    "    # --- Verification ---\n",
+    "    print(\"\\n--- Successfully Merged RPS Data into Main Panel ---\")\n",
+    "    print(f\"Shape of final panel remains: {final_df_with_policy.shape}\")\n",
+    "    \n",
+    "    # Check for missing RPS data after the merge\n",
+    "    missing_rps = final_df_with_policy['has_rps'].isna().sum()\n",
+    "    print(f\"Observations with missing RPS data: {missing_rps}\")\n",
+    "\n",
+    "    print(\"\\nDisplaying key columns with both policy measures:\")\n",
+    "    display_cols = ['cusip8', 'date', 'state_abbr', 'Rank', 'has_rps']\n",
+    "    display(final_df_with_policy[display_cols].head())\n",
+    "\n",
+    "except FileNotFoundError:\n",
+    "    print(f\"--- ERROR: The file '{rps_data_path}' was not found. ---\")\n",
+    "    print(\"Please make sure the RPS data CSV is in the same directory.\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 4. Constructing Variables for the Interaction Analysis  🔧\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "To test our hypothesis that state-level policy moderates the market's reaction to ESG downgrades, we will use a difference-in-differences style panel regression. This requires us to construct three key variables: a dummy for the downgrade event, a dummy for the policy environment, and an interaction term between the two.\n",
+    "\n",
+    "The full regression model we will estimate is:\n",
+    "\n",
+    "$$\n",
+    "\\text{ex\\_ret}_{i,t} = \\alpha + \\beta_1 \\text{DowngradeEvent}_{i,t} + \\beta_2 \\text{StrongPolicy}_{i,t} + \\beta_3 (\\text{DowngradeEvent}_{i,t} \\times \\text{StrongPolicy}_{i,t}) + \\gamma' \\text{Controls}_{i,t} + \\epsilon_{i,t}\n",
+    "$$\n",
+    "\n",
+    "Where:\n",
+    "*   $\\text{ex\\_ret}_{i,t}$ is the excess return for firm `i` in month `t`.\n",
+    "*   $\\text{DowngradeEvent}_{i,t}$ is a dummy variable equal to `1` for the 12 months following an ESG downgrade for firm `i`, and `0` otherwise. This captures the main effect of a downgrade.\n",
+    "*   $\\text{StrongPolicy}_{i,t}$ is a dummy variable for the policy environment. We will test this using two different measures for robustness:\n",
+    "    1.  **ACEEE Rank:** `1` if the firm's state is in the Top 10 of the ACEEE scorecard for that year, `0` otherwise.\n",
+    "    2.  **RPS Mandate:** `1` if the firm's state has a mandatory RPS policy in place in that year, `0` otherwise.\n",
+    "*   $(\\text{DowngradeEvent}_{i,t} \\times \\text{StrongPolicy}_{i,t})$ is our crucial **interaction term**.\n",
+    "*   The coefficient **$\\beta_3$** is our primary interest. It measures the *additional* effect of a downgrade *specifically for firms in strong policy states*. Our hypothesis predicts that **$\\beta_3$ will be negative and statistically significant.**\n",
+    "*   $\\text{Controls}_{i,t}$ represents the set of Fama-French-Carhart factors (`mkt_rf`, `smb`, `hml`, `mom`) to control for systematic market risks.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create a dataframe of just the downgrade events\n",
+    "downgrade_events = final_df[final_df['score_direction'] == 'Downgrade'][['cusip8', 'date']].drop_duplicates()\n",
+    "downgrade_events.rename(columns={'date': 'event_date'}, inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Merge these event dates into our main dataframe\n",
+    "# We use a left merge to keep all firm-month observations\n",
+    "analysis_df = pd.merge(final_df_with_policy, downgrade_events, on='cusip8', how='left')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create the 'Downgrade_Event' flag\n",
+    "# It's 1 if the observation date is within 12 months of any of the firm's downgrade event dates\n",
+    "analysis_df['Downgrade_Event'] = (\n",
+    "    (analysis_df['date'] >= analysis_df['event_date']) &\n",
+    "    (analysis_df['date'] < (analysis_df['event_date'] + pd.DateOffset(months=12)))\n",
+    ").astype(int)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# A firm can have multiple downgrades. We group by firm-month and take the max()\n",
+    "# This ensures the flag stays 1 if holding periods overlap.\n",
+    "analysis_df['Downgrade_Event'] = analysis_df.groupby(['cusip8', 'date'])['Downgrade_Event'].transform('max')\n",
+    "\n",
+    "# Drop duplicates created by the merge\n",
+    "analysis_df.drop_duplicates(subset=['cusip8', 'date'], inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "--- 'Downgrade_Event' Dummy Created ---\n",
+      "Value counts for the Downgrade Event flag:\n",
+      "Downgrade_Event\n",
+      "0    467439\n",
+      "1     12558\n",
+      "Name: count, dtype: int64\n"
+     ]
+    }
+   ],
+   "source": [
+    "# --- Verification ---\n",
+    "print(\"--- 'Downgrade_Event' Dummy Created ---\")\n",
+    "print(\"Value counts for the Downgrade Event flag:\")\n",
+    "print(analysis_df['Downgrade_Event'].value_counts())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now we create our policy dummies and the final interaction terms.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 1. Create the policy dummy from ACEEE ranks\n",
+    "# We use the 'Strong_Policy_Top10' column created in the python script.\n",
+    "analysis_df['Strong_Policy_ACEEE'] = analysis_df['Strong_Policy_Top10']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 2. Create the policy dummy from RPS data\n",
+    "# The 'has_rps' column is already our dummy variable. We'll fill any remaining NaNs with 0.\n",
+    "analysis_df['has_rps'] = analysis_df['has_rps'].fillna(0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 3. Create the interaction terms\n",
+    "analysis_df['Interaction_ACEEE'] = analysis_df['Downgrade_Event'] * analysis_df['Strong_Policy_ACEEE']\n",
+    "analysis_df['Interaction_RPS'] = analysis_df['Downgrade_Event'] * analysis_df['has_rps']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "--- Interaction Terms Created ---\n",
+      "\n",
+      "Sample of the final data for regression:\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.microsoft.datawrangler.viewer.v0+json": {
+       "columns": [
+        {
+         "name": "index",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "date",
+         "rawType": "datetime64[ns]",
+         "type": "datetime"
+        },
+        {
+         "name": "state_abbr",
+         "rawType": "object",
+         "type": "unknown"
+        },
+        {
+         "name": "Downgrade_Event",
+         "rawType": "int64",
+         "type": "integer"
+        },
+        {
+         "name": "Strong_Policy_ACEEE",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "Interaction_ACEEE",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "has_rps",
+         "rawType": "float64",
+         "type": "float"
+        },
+        {
+         "name": "Interaction_RPS",
+         "rawType": "float64",
+         "type": "float"
+        }
+       ],
+       "ref": "1ac0a79b-255b-4549-bd0c-8cd906557777",
+       "rows": [
+        [
+         "567236",
+         "2020-05-31 00:00:00",
+         null,
+         "1",
+         null,
+         null,
+         "0.0",
+         "0.0"
+        ],
+        [
+         "85195",
+         "2020-01-31 00:00:00",
+         "SK",
+         "1",
+         null,
+         null,
+         "0.0",
+         "0.0"
+        ],
+        [
+         "524717",
+         "2021-12-31 00:00:00",
+         "NY",
+         "1",
+         "1.0",
+         "1.0",
+         "1.0",
+         "1.0"
+        ],
+        [
+         "164485",
+         "2024-12-31 00:00:00",
+         "BC",
+         "1",
+         null,
+         null,
+         "0.0",
+         "0.0"
+        ],
+        [
+         "512166",
+         "2019-07-31 00:00:00",
+         "MD",
+         "1",
+         "1.0",
+         "1.0",
+         "1.0",
+         "1.0"
+        ],
+        [
+         "283388",
+         "2020-03-31 00:00:00",
+         "AZ",
+         "1",
+         "0.0",
+         "0.0",
+         "1.0",
+         "1.0"
+        ],
+        [
+         "61894",
+         "2024-06-30 00:00:00",
+         "MN",
+         "1",
+         "1.0",
+         "1.0",
+         "1.0",
+         "1.0"
+        ],
+        [
+         "196376",
+         "2019-10-31 00:00:00",
+         "GA",
+         "1",
+         "0.0",
+         "0.0",
+         "0.0",
+         "0.0"
+        ],
+        [
+         "58000",
+         "2020-11-30 00:00:00",
+         "NJ",
+         "1",
+         "0.0",
+         "0.0",
+         "1.0",
+         "1.0"
+        ],
+        [
+         "204226",
+         "2020-06-30 00:00:00",
+         "NY",
+         "1",
+         "1.0",
+         "1.0",
+         "1.0",
+         "1.0"
+        ]
+       ],
+       "shape": {
+        "columns": 7,
+        "rows": 10
+       }
+      },
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>date</th>\n",
+       "      <th>state_abbr</th>\n",
+       "      <th>Downgrade_Event</th>\n",
+       "      <th>Strong_Policy_ACEEE</th>\n",
+       "      <th>Interaction_ACEEE</th>\n",
+       "      <th>has_rps</th>\n",
+       "      <th>Interaction_RPS</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>567236</th>\n",
+       "      <td>2020-05-31</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>1</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>85195</th>\n",
+       "      <td>2020-01-31</td>\n",
+       "      <td>SK</td>\n",
+       "      <td>1</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>524717</th>\n",
+       "      <td>2021-12-31</td>\n",
+       "      <td>NY</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>164485</th>\n",
+       "      <td>2024-12-31</td>\n",
+       "      <td>BC</td>\n",
+       "      <td>1</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>512166</th>\n",
+       "      <td>2019-07-31</td>\n",
+       "      <td>MD</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>283388</th>\n",
+       "      <td>2020-03-31</td>\n",
+       "      <td>AZ</td>\n",
+       "      <td>1</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>61894</th>\n",
+       "      <td>2024-06-30</td>\n",
+       "      <td>MN</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>196376</th>\n",
+       "      <td>2019-10-31</td>\n",
+       "      <td>GA</td>\n",
+       "      <td>1</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>58000</th>\n",
+       "      <td>2020-11-30</td>\n",
+       "      <td>NJ</td>\n",
+       "      <td>1</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>204226</th>\n",
+       "      <td>2020-06-30</td>\n",
+       "      <td>NY</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "             date state_abbr  Downgrade_Event  Strong_Policy_ACEEE  Interaction_ACEEE  has_rps  Interaction_RPS\n",
+       "567236 2020-05-31        NaN                1                  NaN                NaN      0.0              0.0\n",
+       "85195  2020-01-31         SK                1                  NaN                NaN      0.0              0.0\n",
+       "524717 2021-12-31         NY                1                  1.0                1.0      1.0              1.0\n",
+       "164485 2024-12-31         BC                1                  NaN                NaN      0.0              0.0\n",
+       "512166 2019-07-31         MD                1                  1.0                1.0      1.0              1.0\n",
+       "283388 2020-03-31         AZ                1                  0.0                0.0      1.0              1.0\n",
+       "61894  2024-06-30         MN                1                  1.0                1.0      1.0              1.0\n",
+       "196376 2019-10-31         GA                1                  0.0                0.0      0.0              0.0\n",
+       "58000  2020-11-30         NJ                1                  0.0                0.0      1.0              1.0\n",
+       "204226 2020-06-30         NY                1                  1.0                1.0      1.0              1.0"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "# --- Verification ---\n",
+    "print(\"\\n--- Interaction Terms Created ---\")\n",
+    "\n",
+    "# Display the key new columns to see the result\n",
+    "display_cols = ['date', 'state_abbr', 'Downgrade_Event', 'Strong_Policy_ACEEE', 'Interaction_ACEEE', 'has_rps', 'Interaction_RPS']\n",
+    "print(\"\\nSample of the final data for regression:\")\n",
+    "\n",
+    "# Show a sample where there was a downgrade event to see if the interaction worked\n",
+    "display(analysis_df[analysis_df['Downgrade_Event'] == 1][display_cols].sample(10, random_state=1))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "**Analysis of the Output**\n",
+    "\n",
+    "*   **Downgrade Event Flag:** You've correctly identified **12,558** firm-month observations that fall within a 12-month \"treatment\" window following an ESG downgrade.\n",
+    "*   **Interaction Term Creation:** The sample table shows the logic working perfectly. For example:\n",
+    "    *   In row 512166, the firm is in Maryland (`MD`), a strong policy state (`Strong_Policy_ACEEE` = 1.0). Since it's also a downgrade event, the `Interaction_ACEEE` term is correctly calculated as `1 * 1 = 1`.\n",
+    "    *   In row 196376, the firm is in Georgia (`GA`), a weaker policy state (`Strong_Policy_ACEEE` = 0.0). Even though it's a downgrade event, the `Interaction_ACEEE` is correctly `1 * 0 = 0`.\n",
+    "    *   Rows with `NaN` for `state_abbr` are correctly showing `NaN` for the policy-related variables, as they are non-US firms."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 5. Final Analysis: Regression Results & Visualization 📈\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "We have now arrived at the final analytical step. Here, we will execute the panel regressions specified in our methodology to formally test our hypothesis. We will run two separate models using our different policy proxies (ACEEE rank and RPS mandate) to ensure the robustness of our findings.\n",
+    "\n",
+    "Following the regressions, we will create a **coefficient plot**. This type of visualization is standard practice for interpreting interaction effects. It will allow us to clearly see and compare the estimated effect of an ESG downgrade for firms in \"Weak Policy\" states versus those in \"Strong Policy\" states. This graphical representation makes the results of our complex model intuitive and easy to understand."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "--- Running regressions on 433081 firm-month observations. ---\n",
+      "\n",
+      "\n",
+      "================================================================================\n",
+      "      MODEL 1: MODERATING EFFECT OF ACEEE TOP 10 RANKING\n",
+      "================================================================================\n",
+      "                            OLS Regression Results                            \n",
+      "==============================================================================\n",
+      "Dep. Variable:                 ex_ret   R-squared:                       0.147\n",
+      "Model:                            OLS   Adj. R-squared:                  0.147\n",
+      "Method:                 Least Squares   F-statistic:                     2649.\n",
+      "Date:                Wed, 09 Jul 2025   Prob (F-statistic):               0.00\n",
+      "Time:                        20:43:43   Log-Likelihood:             2.3829e+05\n",
+      "No. Observations:              433081   AIC:                        -4.766e+05\n",
+      "Df Residuals:                  433073   BIC:                        -4.765e+05\n",
+      "Df Model:                           7                                         \n",
+      "Covariance Type:              cluster                                         \n",
+      "=======================================================================================================\n",
+      "                                          coef    std err          t      P>|t|      [0.025      0.975]\n",
+      "-------------------------------------------------------------------------------------------------------\n",
+      "Intercept                               0.0014      0.000      5.526      0.000       0.001       0.002\n",
+      "Downgrade_Event                        -0.0024      0.002     -1.491      0.136      -0.006       0.001\n",
+      "Strong_Policy_ACEEE                  -7.38e-05      0.000     -0.179      0.858      -0.001       0.001\n",
+      "Downgrade_Event:Strong_Policy_ACEEE -8.816e-05      0.003     -0.027      0.979      -0.007       0.006\n",
+      "mkt_rf                                  1.0056      0.008    126.389      0.000       0.990       1.021\n",
+      "smb                                     0.8204      0.014     56.755      0.000       0.792       0.849\n",
+      "hml                                     0.2288      0.011     21.069      0.000       0.208       0.250\n",
+      "mom                                    -0.0868      0.008    -10.758      0.000      -0.103      -0.071\n",
+      "==============================================================================\n",
+      "Omnibus:                  1040358.229   Durbin-Watson:                   2.025\n",
+      "Prob(Omnibus):                  0.000   Jarque-Bera (JB):     227497474311.053\n",
+      "Skew:                          23.570   Prob(JB):                         0.00\n",
+      "Kurtosis:                    3553.349   Cond. No.                         45.8\n",
+      "==============================================================================\n",
+      "\n",
+      "Notes:\n",
+      "[1] Standard Errors are robust to cluster correlation (cluster)\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Prepare the final dataframe by dropping any rows with missing essential data\n",
+    "regression_df = analysis_df.dropna(subset=[\n",
+    "    'ex_ret', 'Downgrade_Event', 'Strong_Policy_ACEEE', 'Interaction_ACEEE', 'has_rps', 'Interaction_RPS',\n",
+    "    'mkt_rf', 'smb', 'hml', 'mom'\n",
+    "]).copy()\n",
+    "\n",
+    "print(f\"--- Running regressions on {len(regression_df)} firm-month observations. ---\")\n",
+    "\n",
+    "\n",
+    "# --- Model 1: Using ACEEE Ranking as the Policy Measure ---\n",
+    "model1_formula = \"ex_ret ~ Downgrade_Event * Strong_Policy_ACEEE + mkt_rf + smb + hml + mom\"\n",
+    "\n",
+    "# Fit the OLS model first\n",
+    "model1_fit = ols(formula=model1_formula, data=regression_df).fit()\n",
+    "\n",
+    "# Now, calculate the cluster-robust standard errors\n",
+    "model1_robust = model1_fit.get_robustcov_results(cov_type='cluster', groups=regression_df['cusip8'])\n",
+    "\n",
+    "print(\"\\n\\n\" + \"=\"*80)\n",
+    "print(\"      MODEL 1: MODERATING EFFECT OF ACEEE TOP 10 RANKING\")\n",
+    "print(\"=\"*80)\n",
+    "print(model1_robust.summary())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **Analysis of Model 1: Moderating Effect of ACEEE Top 10 Ranking**\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "This regression tests whether the stock market reaction to an ESG downgrade is different for firms in states with very strong environmental policies, defined as being in the Top 10 of the ACEEE Scorecard.\n",
+    "\n",
+    "**Overall Model Fit:**\n",
+    "*   The **R-squared** is 0.147, which means that our model (the Fama-French-Carhart factors plus our event and policy variables) explains about 14.7% of the monthly variation in individual stock excess returns. This is a typical and reasonable value for this type of firm-level regression.\n",
+    "*   The **F-statistic** is highly significant (`Prob (F-statistic): 0.00`), indicating that the model as a whole is useful in explaining stock returns.\n",
+    "\n",
+    "**Interpreting the Key Coefficients:**\n",
+    "\n",
+    "The core of our analysis rests on interpreting the coefficients for `Downgrade_Event`, `Strong_Policy_ACEEE`, and their interaction.\n",
+    "\n",
+    "1.  **`Downgrade_Event` Coefficient:**\n",
+    "    *   **Value:** `-0.0024` (or -0.24% per month).\n",
+    "    *   **Interpretation:** This is the estimated effect of a downgrade for the **baseline group**, which in this model are firms in \"Weak Policy\" states (i.e., states *not* in the ACEEE Top 10). The result suggests these firms underperform by 0.24% per month in the year following a downgrade.\n",
+    "    *   **Significance:** The p-value (`P>|t|`) is **0.136**. Since this is greater than the conventional threshold of 0.10, this coefficient is **not statistically significant**. We cannot confidently say this effect is different from zero.\n",
+    "\n",
+    "2.  **`Strong_Policy_ACEEE` Coefficient:**\n",
+    "    *   **Value:** `-0.00007` (or -0.007% per month).\n",
+    "    *   **Interpretation:** This coefficient represents the difference in returns between a firm in a strong policy state and a firm in a weak policy state *during a normal month (when there is no downgrade event)*. The result suggests firms in strong policy states perform very slightly worse, but the effect is economically negligible.\n",
+    "    *   **Significance:** The p-value is **0.858**, which is very high. The result is **not statistically significant**.\n",
+    "\n",
+    "3.  **`Downgrade_Event:Strong_Policy_ACEEE` (The Interaction Term):**\n",
+    "    *   **Value:** `-0.00008` (or -0.008% per month).\n",
+    "    *   **Interpretation:** This is the **most important coefficient** for our hypothesis. It represents the *additional* effect of a downgrade *specifically for firms in strong policy states*. The negative sign means that the downgrade effect is slightly *more negative* (by -0.008%) for firms in strong policy states, which is in the direction of our hypothesis.\n",
+    "    *   **Significance:** The p-value is **0.979**. This is extremely high. The coefficient is **not remotely statistically significant**.\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **Conclusion for Model 1**\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "Based on this model, **we do not find statistical evidence to support our hypothesis.**\n",
+    "\n",
+    "*   The total effect of a downgrade for a firm in a **strong policy state** is the sum of the main effect and the interaction effect: `-0.0024 + (-0.00008) = -0.00248`, or about -0.25% per month.\n",
+    "*   However, because the interaction term's p-value is so high (0.979), we cannot conclude that this -0.25% is statistically different from the -0.24% effect for firms in weak policy states.\n",
+    "\n",
+    "In simple terms, while it looks like there might be a tiny additional negative effect for firms in ACEEE Top 10 states, the data does not allow us to say this with any statistical confidence. The difference is indistinguishable from random noise."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "\n",
+      "================================================================================\n",
+      "      MODEL 2: MODERATING EFFECT OF STATE RPS MANDATE\n",
+      "================================================================================\n",
+      "                            OLS Regression Results                            \n",
+      "==============================================================================\n",
+      "Dep. Variable:                 ex_ret   R-squared:                       0.147\n",
+      "Model:                            OLS   Adj. R-squared:                  0.147\n",
+      "Method:                 Least Squares   F-statistic:                     2654.\n",
+      "Date:                Wed, 09 Jul 2025   Prob (F-statistic):               0.00\n",
+      "Time:                        20:50:05   Log-Likelihood:             2.3829e+05\n",
+      "No. Observations:              433081   AIC:                        -4.766e+05\n",
+      "Df Residuals:                  433073   BIC:                        -4.765e+05\n",
+      "Df Model:                           7                                         \n",
+      "Covariance Type:              cluster                                         \n",
+      "===========================================================================================\n",
+      "                              coef    std err          t      P>|t|      [0.025      0.975]\n",
+      "-------------------------------------------------------------------------------------------\n",
+      "Intercept                   0.0025      0.001      4.667      0.000       0.001       0.004\n",
+      "Downgrade_Event            -0.0028      0.004     -0.750      0.453      -0.010       0.004\n",
+      "has_rps                    -0.0013      0.001     -2.253      0.024      -0.002      -0.000\n",
+      "Downgrade_Event:has_rps     0.0004      0.004      0.095      0.924      -0.007       0.008\n",
+      "mkt_rf                      1.0056      0.008    126.381      0.000       0.990       1.021\n",
+      "smb                         0.8203      0.014     56.743      0.000       0.792       0.849\n",
+      "hml                         0.2288      0.011     21.069      0.000       0.208       0.250\n",
+      "mom                        -0.0868      0.008    -10.761      0.000      -0.103      -0.071\n",
+      "==============================================================================\n",
+      "Omnibus:                  1040376.164   Durbin-Watson:                   2.025\n",
+      "Prob(Omnibus):                  0.000   Jarque-Bera (JB):     227516487381.114\n",
+      "Skew:                          23.571   Prob(JB):                         0.00\n",
+      "Kurtosis:                    3553.498   Cond. No.                         57.5\n",
+      "==============================================================================\n",
+      "\n",
+      "Notes:\n",
+      "[1] Standard Errors are robust to cluster correlation (cluster)\n"
+     ]
+    }
+   ],
+   "source": [
+    "# --- Model 2: Using RPS Mandate as the Policy Measure ---\n",
+    "model2_formula = \"ex_ret ~ Downgrade_Event * has_rps + mkt_rf + smb + hml + mom\"\n",
+    "\n",
+    "# Fit the OLS model first\n",
+    "model2_fit = ols(formula=model2_formula, data=regression_df).fit()\n",
+    "\n",
+    "# Now, calculate the cluster-robust standard errors\n",
+    "model2_robust = model2_fit.get_robustcov_results(cov_type='cluster', groups=regression_df['cusip8'])\n",
+    "\n",
+    "print(\"\\n\\n\" + \"=\"*80)\n",
+    "print(\"      MODEL 2: MODERATING EFFECT OF STATE RPS MANDATE\")\n",
+    "print(\"=\"*80)\n",
+    "print(model2_robust.summary())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **Analysis of Model 2: Moderating Effect of State RPS Mandate**\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "This second regression provides a robustness check for our hypothesis using a different, more objective measure of policy strength: whether a state has a mandatory Renewable Portfolio Standard (RPS).\n",
+    "\n",
+    "**Overall Model Fit:**\n",
+    "*   Similar to the first model, the **R-squared** is 0.147, and the overall model is highly significant (`Prob (F-statistic): 0.00`), indicating that the variables collectively explain a meaningful portion of stock return variation.\n",
+    "\n",
+    "**Interpreting the Key Coefficients:**\n",
+    "\n",
+    "Again, we focus on the coefficients for the event, the policy, and their interaction.\n",
+    "\n",
+    "1.  **`Downgrade_Event` Coefficient:**\n",
+    "    *   **Value:** `-0.0028` (or -0.28% per month).\n",
+    "    *   **Interpretation:** This is the estimated effect of a downgrade for the **baseline group**, which in this model are firms in states that do *not* have an RPS mandate. The result suggests these firms underperform by 0.28% per month in the year following a downgrade.\n",
+    "    *   **Significance:** The p-value (`P>|t|`) is **0.453**. This is high, so the coefficient is **not statistically significant**.\n",
+    "\n",
+    "2.  **`has_rps` Coefficient:**\n",
+    "    *   **Value:** `-0.0013` (or -0.13% per month).\n",
+    "    *   **Interpretation:** This is the difference in returns between a firm in an RPS state and a firm in a non-RPS state *during a normal month*. The negative sign suggests that firms in states with RPS mandates tend to slightly underperform their peers in non-RPS states, all else being equal.\n",
+    "    *   **Significance:** The p-value is **0.024**, which is less than 0.05. This result **is statistically significant (**)**. This is an interesting finding on its own, suggesting a potential \"cost\" or different risk profile for firms operating under these mandates.\n",
+    "\n",
+    "3.  **`Downgrade_Event:has_rps` (The Interaction Term):**\n",
+    "    *   **Value:** `+0.0004` (or +0.04% per month).\n",
+    "    *   **Interpretation:** This is our key coefficient. It represents the *additional* effect of a downgrade *specifically for firms in RPS states*. The sign is positive, which is **opposite** to our hypothesis. It suggests that the negative effect of a downgrade is actually *less severe* (by +0.04%) for firms in RPS states.\n",
+    "    *   **Significance:** The p-value is **0.924**. This is extremely high. The coefficient is **not statistically significant**."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **Conclusion for Model 2**\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "This model also **fails to support our hypothesis.**\n",
+    "\n",
+    "*   The total effect of a downgrade for a firm in an **RPS state** is the sum of the main effect and the interaction effect: `-0.0028 + 0.0004 = -0.0024`, or about -0.24% per month.\n",
+    "*   The interaction term's p-value (0.924) is nowhere near significant, meaning we cannot conclude that the effect of a downgrade is any different for firms in RPS states compared to non-RPS states. The small difference we observe is statistically indistinguishable from zero.\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **Combined Conclusion from Both Models:**\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "Across two different, reasonable definitions of \"strong environmental policy\" (ACEEE rank and RPS mandate), we find no statistical evidence that the market's reaction to an ESG downgrade is more severe for firms operating in these stricter environments. While our portfolio-level analysis showed that downgrades are associated with significant negative abnormal returns overall, this firm-level analysis shows that this effect does not appear to be significantly moderated by the state-level policies we tested."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAABKUAAAMWCAYAAAAgRDUeAAAAOnRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjEwLjMsIGh0dHBzOi8vbWF0cGxvdGxpYi5vcmcvZiW1igAAAAlwSFlzAAAPYQAAD2EBqD+naQAAxsFJREFUeJzs3QmcjfX////XzNj3XVlCEi22iihJUoRKiyJLSpulnUr7+qlEG1L6lD6WkpKokKSUtBIqkX2Xfd+Z/+35/n2v+V9zzZkxc+bMwTmP++12bsy5zrnOda5zrc/r9X5fCcnJyckGAAAAAAAARFFiND8MAAAAAAAAEEIpAAAAAAAARB2hFAAAAAAAAKKOUAoAAAAAAABRRygFAAAAAACAqCOUAgAAAAAAQNQRSgEAAAAAACDqCKUAAAAAAAAQdYRSAAAAAAAAiLpc0f9IIDYcPnzYvvjiC/vqq6/szz//tC1bttjBgwetaNGidsopp1iTJk3smmuuscKFC2c4nrlz51qtWrXsaPv555+tc+fOKX9//fXXVqFChWyN85NPPrE+ffqkeX7ChAlWtWrVNM/feeedNnny5FTPlS9f3qZOnWrH6zzIrCVLlliZMmWsUKFCmX5P9erVMxyeO3duN75y5crZWWedZbfeequVLVvWjnf//vuv+zf4Xfzz4/nnn7err77ajhfR3g4cadkJZdiwYXbuueemem7//v1uPdc6umDBArcdlGLFilmNGjXskksusSuuuMLy5s17xPEvXrzYPv/8c5s+fbr7jTdv3uyW4ZIlS9ppp51mF198sbVs2dLy5MmTrfXaLyEhwY1Pn6F5cu2111rTpk0tMZFrdseiVatWueUgo2XyWNCpUyf75Zdf3P+vuuoqe+GFF+xYsGvXLvvwww9t2rRpbp+j9TVXrlxWokQJO/300+2yyy6zFi1aWFJSUrrjSE5Odsc8NWvWPG63gxltE/Tdtd0pWLCgnXjiiW6bc/3112dp35zVYyNtOz0DBgywgQMHRv34JzvLeGb17NnTHecdLcfL9iOe7N2711asWGGnnnrq0Z4UHGWEUkAYtm7darfddpvNmTMnzbANGza4x48//mjvvPOODRo0KORB1urVq+3ll192wdb8+fMtnmjeBEMphXxZPcCJBTrx1gGoThS+/PLLiB74HjhwwJ106PHXX3/ZmDFjbOjQoVanTh07HumE6u2337b33nvP3nrrrZgI2HQy0rdvX1u6dOkxe/KRnpUrV9ott9xiy5YtSzNMoZIeOvnVdnDIkCF20kknhRzPnj177Nlnn3XLp054g8vw7t273WcpsNb29PXXX3chVSTo8/bt22dr1qxxj2+++cbq16/vPqN48eIR+QzgWKDAp3v37u74JLiO6XhED11k+9///mdvvvmmC6qCfvvtN3vxxRctX758Nnz48IhN27F0PHTo0CH30Mnypk2bXAA3duxYt+8sXbr0UZ02IFbomH/cuHH26quvuotBhFIglALCcNddd6UKpAoUKGCVKlVyV911gqaTKFm/fr2rTpk4cWKqAzwdeD300EOuyiAezZgxwzp27Jjqub///tuFffFEIVy3bt1s586d2R5XqVKl7OSTT061w9fytWjRopTlUf9q2Z0yZUqWq02ONlXR6Mr2xo0b032NwgT//DjWKazp16+f+610RfxoCS476SlSpEiqE1lt2/yBlKpEVVmoYcuXL3dhjyhw02s/++yzNMudlv0bb7zRnfj5qbpPlYM6KdQJq+aR6IqqrtB/9NFHVqVKlbC+r96nk0sFUlpH9Bm6gu5fLzW977///nG3ngAZXUjzKhlF1YHa7mi/oPVYld6iYxvtJ0aMGJFqHAqOvSDKv63NrmPheMi/TdD2S8GdtjuehQsX2t133+22CTlNv4k3f4+H/ZhoO5mZi11Hcz8nqtj1L7v+fRqiR/tzVbLruB/wEEoBWTRr1ixX+u3p2rWrK0fOnz9/SjXHk08+aePHj085GNTBnQ7yPP/880/cBlLeSZ+uRPqbCKh6Kt7oxD0SgZRccMEFIZuIaPx33HGH/frrr+5vVa/oanirVq3seKLpziiQkkheuY8GHZB5YcvRlN6yk5FJkya5sMmjpigdOnRwzV68CsD777/fBdCik16FUmrS7Pfwww+nCqR0wvDII4+4pn8evffpp5+2H374wf29Y8cO97cqF8Khk/Ng0059xmOPPZZSrfnHH3+46i41NwGOd6NGjUoJpLSOan3XPkAX0kRVgtpPeM3ItL/46aefrEGDBinjULVtTjgWjodCbRNUFdajR4+Ui2UzZ85024WcaLbop+k4npqeiwK942H/e7xMZ6zTcQ+BFILoNAHIIh2UBA9mvEBK1A+BTpj8zynIgqU02dNJZbAyQgfAHvXJhchQc8DgifW8efOO2vQg9raD2uZ16dIlJZASVYY+88wzqd4T3A5qnVeTVc95551n7777bqpASipXruyaE/mb7CnEXrt2bcS+j/cZ/j7kdPKipoVALK2vqgpq3bp1SiDlVSY++uijqd4T78ct55xzjju+8wvVZQMAIPuolAKyKNjnifoD6tWrl+tjwaNASh0oelUw/n6CQnUw7D0XqnPm7777znWKqYNKNQfUuNXURh0It2/f3jUdTO9KhDoU//TTT90VTgVBKgVXvy5qv63OO9XBaWaouZeqwbyqDrX9VvWXmutkhaog1AzLO6msXbu2+7/K5XUV0v86NTtLj65cqkri22+/dX3N6MRR8/+EE05wnVaqSVywvyF1XuyV4+u9ujqrE2BVdKiZ0H/+859UB+nhzAP1hfHf//7XVdLpqrR+d51Iq6NnPfyVYf7p8XgdcEa6M9BgPxhaFoK0rKqvJoUEmqeaFzpBb9y4sd10003pNiNQn0G6Cu919q/1Q/OkWrVqbjm7/PLLQ75PFYVqCqH5qg531dRLv5/WBTXTq1evXoYdqnqd1Po7Ec5MR+c60fr444/d8rZu3ToXpGid0I0J9Dmh+hEKLjvqEFgBhirOtE7qPRdeeKFb7nRyl9XOVkXj96Y/2PmqljlVJqn6UpUMalqiZUvhjTom1vf0B0LR4K/w8vr60nLi36Zo+dE6ovXbay7kN3LkyJT/q2Pxp556Kt3voeYhOmlWoKrvrUekm14oXFO1l/rM8bYzWu702wZlZbv8xhtv2Guvveb+r/VCnbn7tWvXzn7//Xf3/zPOOMON16958+YpzSRvv/12u++++1J1hqx1TM1Ata3/4IMP3LZN81MVHQoLtWyHonmp5VhVMfoN1QT9uuuuc/NAzRfV4Xxwe+TvIFrbWH2mKoM1P7TN0PZOYZ62ddou6/9aT1RVp2Zi+n21vdWNF3TCH+qGF16TLn0Xr5rwzDPPdP2Xpfd6v6xshz36HTWt+h30e6opm25SogskWsc0X7Kzjm3fvt0tB9q+av3VPNC2VdVJ2u55brjhhpR9odYf3WwjSPv1e++9N+Vv/QZH6mPNv75qH6y+XDQv/Ps8hTD+6kNvWxaqU3CtF972yn9DkKz+5lk5HtJ+SdsZLZf6jbSOaVz6fdQReWZuppBVWl/9QlU26zmts+qmQc2Lt23b5kJ5NWdr27atq0TNisx0dK7mhOr7S7+Nqoi1/VGn7Pos7cc0v71q7EsvvTTlfVqPQ1V/at36/vvv3f+1bdXykdOC+0Edp+pYQNskfS+tM1quVNGnFgnehV4dN2hf4dH2NPg7ib63vr8ohO3fv3+GHZ37O5/Xsqq+Hh9//HG3Pmr/c/7556dsx8P93YOfoW2c+jHUsZe+v1oQaPnXPqFNmzbpLhc6ttI80PSrvzN9T+0Pta9ShbKmQ5Xl6htRy4/mpdZnrfPatofalun16lJAr9cFH71G+4RmzZq5ZSp406bgvkD7AM0rraPajqpPNgXgWoe1XfOODfzfw6O/9TiWO/ZHziOUArJIOxI/HYBpB37RRRe5K/3awengILt3kNEOT81YdDLqpzJ3bfD10AmfNuQ6kfHTCYaaC3onFR7taPTQzkQ7du2AdCKWEV0ZVOjmHdRWrFjRvS+rgZQXNmkn7IVSOiD3PsPr90gnAaE6WPUoRFJ/VF645dH7dUCjh05oFJSkdwKjMMo7ABMd4OpAQCdz4c4DfS9VhuigwqMTIjVf0kMHDjopiWRH5pkVrIwK3lFQJw86KPX3qyOaH3ooxFEH0zpp8dPyF6yGEfXRo4cqYdQEwn8AKfrtdHKtkww/HVjpoQ6tdRAUvHKfHTrJ1ElOsJ8UHTjpYFAPhSTqbFcHn+nR9Kn/E+8OgKL/jx492p2c6aDTf5KZXTqBVQgRDOW0bGkd0kPTrd9Hy2W0nH322amaQSgU0UmSAryGDRu67aDWY3+46Kf1xL990vYyvY7QPVr+gstgpGnagyGmP5QKZ7usoMo7mdHJpLbB2kd44/NXsShQUWjsnQDoZMffb5fGFaQgWCciwbDLWz5UuauTdj81pdRy7PUjJFrX1W+Q9g+ZaVaqsFHbDX+zLgWPCn20XmmY1v/g767vpIfCFW2L/cuIvoumS0GLn5Z/PYLfIyic7bDC3gcffDDNd9b7FNjpoWVVJ3jhBFMKv9VsVd/ZH0JrWnVCq5M473hBr/NCKW2PQ92Nzr/sKUDITKf/Wl+9kz3NmwceeMAtkzrhVBM9/QZa5nQME65wf/PM0MULLeP6DI9CAK2f3oUGzcdI3/wieHEsGKzr2EABYfACk/YJCiD1UGimfY+/ej47tL3XRTT/uquLOgrRFeJquIIdHW8pVNC89prva3kLhlKaj/5KdV3oORq0/9Rxlr8pp47nFGJo3dV2VWG7gpWXXnop5ZhR24revXunGpfWIS+QkiNtN4I0T9TXofe7av562+xI/u7ab2q59fP2Izou84fPfgp/dcHB+129YwWtB3pO80c3NfB3eaDxaZ3XPkbbsuBn6qKav885fWfv2Eh9OGo6M2rFoOVO+w//dlTL43PPPefml0JBICM03wOySAeIOvHy01UIBVM6sNVVae2MXnnllTQ7LNGBQrCaQs/p4a9GCZ746CqgKjT8r1E/EDfffHOak3udzPtP+HQArqvm/gMq7YS0w8yIDiIVHHlNWFRxoyup3lW4rPIfiOrzvY6Q/QdER+pAVdPsD6RUnaArU/4gS7+H+oNJjwIpXSHW/NR3adSoUbp32srMPFBfNwpevBMhHYTohNTfqadO9J544omUv1UlpiZDfnpO3z8SnYHqhFEBnqrJvMoP0UGdTkQ8+l76fv5ASle3dKLjnYDpYFd9ayi88+hEWQcg/mVMv4MqyPQZHoWD/uVTB5L6PP9zmqdaPv3VJQo8vH7ZdOIVvKKu5zSvMtNBt+iAyB9I6btpWv0HmvqeOjDTiWB6dDKgA09Ns7YF/qvzCuIUVma2s1X/+qgrsd52wKsA0kmHrmz7AynNIy1b/kBU1VPaDoR7owCtDwoBM3oE1yddhQ6G4Too1l0k77nnHhfu6ORG79NyGGq98k4qJNhk72gJBrbBbXg422Vdxfev67qi7NEJhP/kUtsQ/4mG1l+P9huh+rNRiKtAStOiiqLgibmCVv9n6ERbfXn5n9P2TOuYrmarysW/TU6PfledsCjM0OeqWtWrjNRJsT+c0HytW7duqmnTyae/8kB05d8fSGk7rXmnh/6v5Ss94WyHdQFHf3snUloP9XtqW+wPrhTo+Cv7skLBoJZ3jU/T4x+v1lmt45oO0bGDfzuoEMFP64yqU7MaIKjyIhiWa9lWkKxtnkJkVfhpGxmsBtL2SNsl/3TrN/e2V942MJzfPDPHQwpLFcx7gZS23do/+dcpbQO13QlWsmeHgg19Jz9/BavCZVV++bcR2qZr+fFXzus3VAgYCfrtFbp6664CYAUF/koh76KkjoPE34+f1v3gxTcFfl41q9b/9KqbM6Jt/5H2IekFLB4vkPKOP/xVfPotvFBVy6G/T0wF7MFAWeGzR8tJVjvm1zGmflcdV2qd1TLnzZdI/e6qLlfQo3muzwheVFK1Z6h9pyjc1X5C66G2Vf7jAYVxCuEUSHnT5a9gVmDmVeZ6v50CLC+Q0vGbjo308Pc5p9ek15xd06nlUuuf3he8IKz9k9eHlLbHwVDa69zfaz2B+EQoBYRBVyEyuqLolSCr2YV2LH462daVnuBzeqic3zvw8J/4qApLJ47a0erAWxt/78RfB7X+cEknCdpheXSQq/fqCorGe+WVV6YMU1WHv+LDTzsolfl6O8VixYq5K5zZqcbQibx3xywFUt4V4cyGUjpg0Q7XOwhWKKIdv05U9B39702v6smj29BqfmqeBCt5sjoPFHh4B8MKZnTwpHmrf9W0xb9j9gI1hZa6qhw8edRyEE4np/ouOqn0HjpJVDCgiiT/LcD1tz/IGTNmTEolhk7IFLhp2dOJoSrOvBMKLWc6gfHogMhrFqiDEJ0863fQAaLmkZ//t1BFkb9iQAdt3vKpK6X+g+vBgwenBAGqnvDTSbXmVbDPj1D0+f5mKfqNdOKtadV0q8rIOxHUcqmT1PRObrQM6gRJy42uHmoe+Q8IMwq0gp2t+rch3nN6eJUPmp/+g0c1CdAJrpYtrTP+K96ap/oe4dDBq1eJkt5D2zQ/nQzp99EBb0YVelo3VN0TbA7ivyLrrVuhDtozOskJNnOLhGBzaH9T1+xsl/1BsD9UCHWDB/+NNPyv9Y8juEzq5F/NQLQ+61/tezyaFv86p+DUX42giyn6HgqBtTzrJC6zHfDrZEKhmD5X2zuvqaCuxnvzUqGH1m0F1MF9kH/boM/07y/1fm1LvMoDbX8yarIZznZYlWteOKrP0/Tp99R2SvNEIYRONLVN9W9Hs0rNh3ShSNOjZUV/+yupvCBO06Cm9R7t3/zbIm2vvHAmKwGCTuT1uwdDV4+CPFUcaRlu0aJFqotaXpNM/y3bvef08PYD4fzmmTkeUtWhdwFL1ZTe/knLhLZB3gm3pt8f+GaFwnNvu6ITeq3banKkihn/sZS/mlPNxr0LAVrvVZHoVeNp2dE4PFpHFP5kl38Z175Z653WWS3T+g7e9kfbV8170e/pDxT9x4fi36apyVmwGiwztD050j7kSP1xaZ+i9d/7fYNNvPzv91c+6RjWvx3V+uEPc7XfDIcuAGhbqnVWxwveRZhI/e6aZ9rWalr1GXqdqp88Ch7Tu7mAlgGtH1q3tK3SPPPvQzVcgbW2F151qJ9/vF43FqJxaFp0bKSHxu21ptCxtz/s81OoqQBPx3F6n5YxHaOF+v10fKvmin6aVq3zOi5G/CKUAsKgHbw25DoJ1I4hvZJ+bagVYAWbDB2JdzAh2tCrxNd/4qv+Lfw7Wh10ezsV/w5Q06WDTO9AUX/raqLa56t6Rgc06TWV01UrL6zQ1ZK33nor1UFpuPzBkXbkuvIye/bskMODFJpoJ6kTde3I/fNAO3j/FdeM7mqnK4s6UPMOKtIr+c/MPNDVMv8OXlco/fNUV5/9t64P1UdINOjEQWGLfn8/f0fTqn7xByUq/VdTSY+/rb/mvQ7AdAKtkx1/fwPBZcr/W+jgzqOrYloWvatxep/6W1DlgEr2vVAqu7TMeAfyWoZ0YO+vkNLJvteU1AtT0jsYVNinYM/rl0YBpb+PinCrlULxV4VomVV46l2J1XKr+aQqP48O5P3NlnKa1hsFc9qWqFmdv0Iu+Psr+PAv+8H+2/xVOx5d6c/oJCdUJWp2Beeff7qys132N7vTCZQXCnknUzqx9k6uvVBK20Z/1ZS/b5ggbee9k0ktm/71Nrhc+psuq1mXqro8OknKSrNZnbh767s+X+uX6KKMQgKt77rC7t8n+it2/NsGBUT+akxtG/zbIwVEukgQSrjbYX9/e5rf2uboYommU/tNr38UBXbBJkKZpRM9/81PtA6r4tK/7PhDIH9li6oy/MF0dgIEbUMUYOguk8EqRz+vciJ4U5cjCec3PxKtJ/5qQf3+/mBNVev+OwSG2x+NmjZ52xUdj6gyxE+hr35Df1Ws/1hL670/KFF4qmM//++jE/bsUOWld3dEL/jzN91UM+O7777bXcRRgKvtkWi5CwadHoVu/kDnaDXd89ZRfz9M2i/7qxz92zAFRv4LIv7qSv0u3jKmY95wv5O2P97+1jteiPTvruMdf9AZ7Lsto+MJ9XflBUba1vm7FtG+RMuBtz3WsuG/4OIPW/3HgKqo9C9Tqgb3B+gZrV+qptfxkX/f4D83iuSxEWITfUoBYdJJlXaaeqhc2ruFsq6CBqt0dIKtjgn9pb0Z8d+ZTgdcofoh0ud6J6064dYBpHY8/j4QdBAe7JxQwU1mSsn9/Zho/PpbV5+zS6GTN906GNL380rHVfKbmYNsnXSpWkpXbXT1RfNLV2m98UhGJ+cZHZBndR4Ef2v/CV4oms6coKYOOqHUwYaqWrzvr+VUlT06wArVwa9/+nW1NdgvTfDAXVch/cuxDopUlq0DL50U6vcIVhT4fwv/8hmq3zX155RRn07h8K9POuAKVS2g9UmVav6KJ/8BVkbT7G+65V8Gs0MnYzpJ9+jqa6jfT9PtndAqxNEympnOoP38ncVnlQ5+1SGrHjroVKCi7aCmyV+do/VHYaAX4AU7zvf3fXE0+ZsUin/7mZ3tsgJYNZFT6KLPUPChgNv7jb1meQogtI3QvNQJvlchou2iAqRQdLIR7Og3OH+9cE0na/71039C71GFpZa1zAScGW1Lte3RtCmk0Im+tg+ah953Ev9n+JeXYFOpjKY3O9thnfTqpEvbPf1eaj6oh7Zx+m4KW1X9FexLMis0nmDfjdp/aV/iVcL5mzPrs1TN6lUnqupAz2m58VcCBTtCzgx9LwWWemg50IUhb331B4L6jdTMLljpfSRZ/c2PRNsz/3sVqOmRk/tXheuaTwoN9Tt4N5Pwb3/1Of7AOlQVo7YdWoa9yqTMVNFmxL8/SG9f5L+44qegUxdnvHmqCy8KdfxN9xSe+qt8siISHVSH+j4Kjb2LD8ELFwqDvKa4+h46Dtd65q/m0f4mnMovCbX/j/TvHvzOwZvShLpY431GsGLfvz/SsWDw2F/Ls7d/8yphNc/8F3cULAebrGZ2/Qo2LVcgpWXK29+k910AD6EUkI3+enQVQn0RaUeoA1ev6YJ2+Kqy8ZoI6ARDO6bMtmv3X1FIr4on+LzXzMR/FTK9O/OFQyeUulKf3XH654Hmk/8qTWbmj0qIdSASbPaiK1k60PcHSelJr/+ocOZBqDvZZSSnrhbpCqMXLOhkRldRNS+8MEAHBP6r1+Fctda4FHp5oZSqBVU95v9OWid0ApXe7cT9nxepjl9zcn0KCtV8yLsaGUmaz/4mVJmdbq8fkWhQcKYrxzr41QGxDkDVbMxrOqZ1VNUl3kGp10+HTmAUDOog2btiG6pph6pk/JUBoe5aGGnB6qtgn2PhLkc6Wde0ezd6ULigeedV8HkdrCuU0nPqm8df0aSTn/Qq0YInH6GWSe9zgut7qLtqKmjUNjIzQWF621K9V5UlOln0hxA6QVQFZqjm1cH+SkKdTKbXfC8722FtN3UBR5Vw3rKq8F3BoR5ehaw67A3nBiahmqaKv1IqGIYqRFDFhVcdpaYwqhjy5pHGGezb8kj0nfS76DfXNlwnwGpWp4eWDzU1UuWG17+V1l/9dqHC8Ej95kcSrf1rendrzeznZGZ7kN1tc3Ddzcr+UwGoKuW8i0IKTBRK+Svv1E9TTuzLMivUzXP80xNsUq8wWVW6Wnf00PKrfYaCVo9XLRaOUNu2SP/uwe1ZetvtoFAXRPzraah9Qqj9R1aO/460fmX19wOCCKWALIZRuuqtQEobWF2p9Hci7dHOXs2kvNtoZ7USwH91KL0+n9QPRagdQrAT1VA07cHmM6Gozxo1X9CVSl1F1cH5kTqrPBJVC+gqjgITnXT7r2odKZTSwbLuiKImDaKKGpV8q7ReB9q6shtsOx9KZivWMjMPggeGaiufUfVAZg/ws0NXd9W/hCpgvBMMzRudyKikOjgvvAMTVfOpmVVGvOVL1QTesq9QVldodUCovlf0HdO7I5Te7y2X/hLyrC6bWaH1SVVeGa1PwefTu7ukv8PQnKRyfH+1Sla3AzlJTVt0IusdbKtsX82lghS0qELPX4Wl7aBCKf3Gavqs/idEv0+oO41Fm78psfgrZLKzXfaa8PlDKf/JitdMzdt+qXrFH0qFuuteOMtkcHsV6qREAXawz6/Mjs9bh9XXm9ecTlfQtd1WpZcqdVVVqaYlQcFqolDbh/T6dcrOdlhX9LWdV2ivZVAntQqj9H/vN1KgoqZjqgDKqF+rUNKbZn/gEjyJ1LGF+lfRb6H3K6T0BwhqjpXZAEEXCNR/obcvUNNBfxNB0fqoMFkV395dNb3lIFRwGanf/EiCv6vCo/T6VpP0gttIC84TbQ+CN+MIbg/SCyczKxhEZHX/qd/c22erCZ+WZ//FvXAq7yIpq8dGmh/qU82rTNX64b+Yowsf2bmbZKjjxEj/7uEeTxxpOc/sXUKD31HnLMEmhJkVjWNbxDb6lAKyQBt6XTn3En+VK6cXNgVPTjK6Y13wCoK/KYZOTkKdOPjbtWtn4J3M+ZvuqDlE8IBY06sQRztz9T+QXueTqvQK7qDUWbT/Lm3h8odP/uZORwqldELgBVI6IFFYpJM170Ahsx3RZvZAIDPzINhUSlciddLiPXRQrQBHJ6E6mc/osyN5JUlXptXnQPCAPtgEwH+LXzXD80+7HjoxVtMWr2zdOxjSd/LoZE4nJCp31zqS0e/gn1+hqql0YKkmM+qrQZ2bp3dynJV55V+f9B1DLcP+vq4kEk1VsyL4fbRO+zukV4eroZq9+LcDurIbvKNjTtA20L8cK1hK7648GW0HO3TokGqYKiCDFSN+weZdkaaTGfWz5z+Z8Dclzc52Wfx3VtR2wnutKi/VvE/LnFeFqXnqBWB6T3rN1rJKIZn/xMrfqbpHTdAz28Qq1ImIAh1//04KyLW/8fr8S2/7ENyW+u86mVHH8NnZDmt507RqfqtfGv0G2p6pnzzNG/821GuemlXaxwbvoqUqQ38AGrzVun4jr6Nv0XLpb7qXlX5yNG5/x/YKiNLryN6/vmpbnl4lXHB7Fe5vfqRxa3vmX8YUDgb3UQoldCymC12RvqCRHi1v/ukK1Zm1Qkf/8pLdfUpwGfFuFOOnCmlV7OtigP/mHqILCV5YoX2gmqv7u0442hcEwuGvhNJ2y7tjr3eRLTvLQ6hjtaPxu+ck7Q/8TQZVmRxcv9QPnVo0+LteiDSqqCCEUkAW+Uu8dRVVV1i9KgyP+ol4/fXXUx1g+ttbB69ieCfe3oGi/4qVDmYVjviviqlvAH/nierzwLsi77+irvHp6qR3RVYHIGrKpRNIHdxpR5PeVRyNU1QB43UYq2qhvn37WnYFbwcrOgE/0hVZf3WCrvr62+rr4MCruohU+/XMzANNt78DXXV+7+8gVn1yqE+x+++/3x0U+k+qjrQcZJeWI69Dd9GJiZpn+E84/c2hdFKh6fcOEHQQopMydbCtuxL572DlP3nRVXzv4FbLq/+W6+L/PH9nzQrIVMHlfV99f3U0rOVVv60O7LzlMzvzyr8+aR5offJPvzo9VgWcR6FtjRo1LKf5v5MCDu/EMdR2QL+F5r935y29Rncn0oG4/wA9GpUCOtD3nxQrLFL1oH/91PTpJH/kyJEpz6l6zt8cTvPZf+ctNedVXzfBPjgUIihQzcydFsOlwEHLuv/EWqGZv6ludrbL3u/tNfH2PlNUTaKqFw1XIOsfJnpPZq98Z4Z/GtSXkFcZ4y1n6jQ9O4JBpP/uqtpW+ANt/7ZaAYQ/iFWw4Q+ute0MnmhndzusqiHt0/VbqoN3f2f8WpeCJ7XhnORqn6Htrhdiaj3XNtIfuPt/E4+/mkl3r/SCX33XrAQIOrH0b+c1T7Ws+yv1NE0K4vzhvEKxYEWZxz/t2l+E+5sHx+sft7YhWv+8pq2i7Ym/glDzRTccUIWvLmT4O7zOSTpW8d9kQuu9/8YUmrfqu9MfRqoT6exQh9j+qhwt0/5O8BVa6qELd1qvg83G1IxSlf4e//Qe7SqpcOlCmFcRqWMQb/utQClYDXi8/u45zd8MWE0g/Xe11YUB7Q+0bVSrhEjdfEa/j39bGuljXxyfaL4HZJFO/HTV0tv56aBAbfHVJEVXFXUCFbwqqIok9XeU3t3JdECgyh81rdJJmcrodYXeO+FUlYT6DNJVGo3bP35d5fB3XK4dtEr7vU4WFZDp4FIH7Dpp9Fd2qU2+KmoyoulS8ObdeUZBlnZUme0fK5RQHdhmZnz+SgUdCOukUeGBTuCCfcF4TRUi4UjzQL+vd1c77Vy1jOi30kGSv48rVUP4Tz6CV6F10q1KEh30ZKYz+sxQkKErqt4yoxM1ndipOYfoQEMnDN5whalqYqQ+EXTVzAubdOLg75NKfax464CWT3WQqvfopNYLTkL9Fpo3OrHwql7UXEl9uWj9UZ9D/koZfZ7/znx+CltVKacTWX8H5aHoBE4HqF4VjNZZNQHRyZ0CMP+dlnQSpBAuGvzfSQez2o7ooEwHgJqfWr510uX1xaLQQ1VrWpe1vPuDC60b4YY2OslT6Hgk2gZ5n6GgVtsYr3JRy4BOhNT5qpph6Uq8/8RVJ/jqcD9I81qdPHsnV1qmdHKp8Ep37NI4QvUTp+XCf9eirFDY4TUbVmCqZUAXFvxVm7qIEOw0ODvbZY8uGviv5ov/pFvNTYK3tc/ornvh0Lqv5cr7vs8++6w7wVV4oXUwu3dwDHa6rsBSoa/CmeAFHG/74IV3qkz1mkcrxNE+UdsahSZeH3npdcIeznZYFSW6mKFtlsapbY6WYZ18an/p3zZoffX/Vpml6VV/UNoPa3q07Quuu/6LBx5No6ZD+2x/JUE4dxNT6Kb10wvGdNdMLYfa/+sEUeugvzmhKsuCTXL92ytt57W90nZLYVZ2fvMjHQ9pmVCTSm0btRxo+dV2X0Guv58qVWX5736Z0xSEqbmj9lladhT0af+p/aDWI/9+UN/JH2aES6Gq7v6q5UHLuOaRfkPtn/3zQvM2eAdOr3rIq+7xliltmxXUZoe2fZnZh2h5VrPUSFLoE+z8XuFbRq0TjrffPSdpn65tgRd6K0DXBS9dEFRluRcUaZ3U9jJStN6rX0VRsKeKUl3kOVp3qMbRR6UUkEXa+etk2N/XiHZMOtAM3nlMr9XBWbCzRe2k/FcgdfCrnZl3AKyDBO24/XdC0cGdKgn849fBiG79G+xsUScZ/rb0XhMFfyClkuJgRUt6dJcT/xVsXV3OzhUNTW/whDJUUBXqIN0fXmm+63t5gZT/9sHBu0xlV0bzQBUROhnyAhQ9ryog/4mQggRdvfdThYS/LxEdZCoIiuSt7hV8BSsfVDGgDuNFn6/l2d+psOab7pjknbRqWdXVaH/1kAIGf3m79x4dkOl5/wGhdxcpL/TR3V38v5WuKios8wdSCsv8Jxia9/67zeikRr99Zpt0KZzzXznVd9O89p90ah5oXoTqIyIn+K9ai76LwhxvmnRiqBM7VRQF1+Xg7bF1Yhiq89PM0HbBux16Rg//76gAQ/32+JuUaJ7qNfot/YGUfnNtk/zNkfzDNB6dQPm3iQq7FFSFCqTUlO39998P+0TKf/t3BbY6mfMHUqrk1BXhYJ892d0ui0KsYD8e/m11MPTQMuC/TXokaFukyjP//Fali+aDtqk66fdvl7JaHaT1J1h5oea/XjjhX/fFH1rogopOuj06cdZ6qtfo/woo0quoDWc7rL9fffXVVBVxXkjq3zZofqiqM9jvVWYo3NR39qp7/euugldtj0NVwmk7GlzGww0QtO3UjSn8lYpadvWba/n1B1I6GdV3DVaLBrdXCqbUz6LW1ez85kc6HtKxiva3/nmk39QfwmiZULAazY66FTBqX6bf0L8t1fbZH0yoEi+71Yf+30ABjDe/tIxrXvrnhZZl/X6hbhSgbXDwDm/a/qTXYXdmKSzMzD4kve4iskPhaHC9zE4H58fi756T1PeWton+baCOQfV9vGNcDdOxSGb6l8ss//bEO5bX8U96XQEg9hFKAWHQzl7VHrqaoANhHfBpo62DJm20VVKsTiR1NTrULXoVyOikR1dsVUGl9+pqsP8ET1e6tOPTVX1VNOmgTgdcOhlUIKa78ejqRqjbv2sHrQM0NTPTlX0dZOoAV+PUCZdO0DX9oe7QEYre67/qr6snutKaHcHKqFBN+oJ0QK7QQP0meFcHNe908KyQRFUk/uaI6swzUo40DzRNqmTRgbl+K/2uOvnU76oqK5V5Bw8GFSIoTFAgp++hE1CdJIW6FXF26CRaV0g9OnBSNY53pVTNqjSvNJ2qtNNyoe+rA1Ute/qewSv5OpFQhZVOmL3X6/upmkSVVv4rarry5T/p1zKrZVe/mb6rllfv/apg0jLvbyooOtHU8/ou+jytCzqYyuyt2vV6ndhoude80JV2/T76bH1nVQV4/VlFi9YBdTyrZUTLspYHzQ99L//VfwUwqgZTExydVHq3WlaAoe+kSrPsnlSEQ/NQFUfqyFxNADStmqea1/ot9dsoRNCylVFTCr1HJ1qqQNQyqLBWYaqWCf0+2r7qd1cfY/qNFPhk9nfP7C3stU1WIKIDbzVnC66rkdgui9Zxfz9V+p7+k3+d3PtPJkOFWJGg/n60nmq+alnSZ6iiUKGb7pjoF86JvpZL/V7esq3toeaJrsqriZX/Owe309ou6HdQ+KjfXw8t65rnWj4yEs52WPNA06AwTttCfZ5O+rU+atugaVZVYLjVwVpndSyg8Wvd1vzQtKkjcK0//maHQcH1RvMh3HVdxxvqH0aVHdp+az7ot9X80Qm2xq2KKjXhCQZQXoWWqkS03us7aF3w1tXs/OaZOR7SZ2u9UlWMPl/rkaZd8+6mm25y409vnctJ2nfruEPrvfYdWnf13XVRRseGCtwVAEcyLFMFrZYbhR5ajvR5+g31/dX/pX7j9Cr6tFwHQ83jtemeR+urtmceLcuRDvKPhd89J2mfpH3rzTff7KoeNU+97ZQuyGr9ivSxkarddfFR2yF9lv7VcYS//zvEl4RkehcDgIhRxYFOplSJpBBNJ646IQlFJ1lqcqKQSAfiChK1k/bopEUhiq4i6cRGTTG9ZhIar06UdFKtky1dGRU1p9BJQkafCyB+qQrFq2YMdfc8bW8UEPib90WzWRT+f2q2ptDFoxD7eA8RcHQpePT631T4oObIobYDABBNVEoBQASpiaECKV3xVeavq7u6mhakplqqolMgpSvyapalJkxeE0v1taRKJJVP6yqomkh4V6911yZdDdXJiU4e1Z+B13Gsrkrrc1WBBQBB2raonyo1i1KFqr9zaG07VHnnr2wM9heE6FCTupdeeinlbwUIke5fDPFFNw/x+hsVVUATSAE4FhBKAUCEqH8N9X+iEnn1G6ISblGTwyA1odAJoPpz0MmH+gVSAOX1QaA+nLwmEeqLxAumFEjpbkaiiizvro7qv0PBlpqnqAlcJNv+A4gd2m54VFmpJldq/qKmUepzxruhg6hJkIJvRIf2BWqepeb/agqt/p48akbj7/cFyAxVTKs5vZYrNc/ybhKgSm5VYwPAsYBQCgAixLu7m/o0UIjk3f3Gu8NIqFtm625c4nWe7N3ZSx0+ig4idfDodbKuz/Da9msc3m3P1V9Hjx493AGnmgECQCjqi8bfZ5DCcXWUrM69Fax71GeQmotltaNzhE/95Wmbrjsw+vcb6mPJf/dTILPUVFd3XtTFLK+iWlSpHa2begDAkfz/t04CAGSL7vQkXgfyCpP0UAWUKqf8nbDrjnOizqHFuyuSd1LoNZ/x7mLnvVf9wajZjfqMUrMbnTCqM2l9hvqfUge2wTsbAoBHlZzqrF39yqjDaVV3anukbY7Xsby2IwrVc+q26kifmlTqLn0KELRfUDWtAqnM3pgE8NMFLXVYra4BtH7rJjHqQJ9+4gAcSwilACBC1HxO/Leu9qoMtmzZkiqU8q5YenfW8u7S4u/LJXi10/8ZXkelHlVJ6b267XfdunXdrZfVV9VXX33l7hQDAB6F5boLV/BOXDj66A8QkaQ7Sk6dOvVoTwYAZIjmewAQIV5/H16fDeLd4NS7bXYwZPJCqH379qUJtPy814XqU0RVUjqR0e251QG6+p1Ss789e/ZYp06dIvTtAAAAACCyCKUAIEK8fp/UWa0XFumhail/lZR4f6vzclm3bp3712su44VWavYn27Ztc/+ecsopaT5XHRUr1FKV1DfffJPSUbqafqxcuTKHvi0AAAAAZA+hFABESJs2bdy/a9assb1799oHH3zg/g51J7yzzjrL/as+XeTbb791/15wwQUpnaWL+n5RsLVkyRL397XXXptmXAMHDnR34atVq1bKc2oOqCY6AAAAAHCs4owFACKkQoUKrlpKzfdUCeU1ndPtvceOHesql7y77T3zzDOugmrGjBmuA1t1bKsQ6bHHHnPD77rrLvfvww8/7DonVcil9/uDJ3nqqadcM7233nrL/a1busuIESNcp+nq4BQAAAAAjkWEUgAQQT/88INVqVLFNadT6KS75D333HO2fPly10RP4ZNUq1bNhgwZYvnz57edO3e6vqIUJJUoUcIN7927t914440uqFIgpcqpadOmpfm8/v37u3E1bNjQ/X3//fe7qqnbb7/dvfd///tflOcAAAAAAGROQrLXCy8AAAAAAAAQJVRKAQAAAAAAIOoIpQAAAAAAABB1hFIAAAAAAACIOkIpAAAAAAAARB2hFAAAAAAAAKKOUAoAAAAAAABRRygFAAAAAACAqCOUAgAAAAAAQNQRSgEAAAAAACDqCKUAAAAAAAAQdcdVKLVv3z57+OGH7ZxzzrFGjRrZu+++m+5r582bZ23btrXatWvbNddcY3/++Weq4Z9//rk1a9bMDe/Ro4dt3rw5ZdjkyZPd+C+88EKbOnVqqvdpnBo3AAAAAAAA4iSU6tu3rwuX/ve//9kTTzxhAwcOtEmTJqV53e7du+22225z4dUnn3xidevWtdtvv909L3PnzrVHHnnEevbsaR9++KFt377d+vTp44YdOnTIHnvsMXvggQfs3nvvdc8nJye7YdOmTbPSpUvb6aefHuVvDgAAAAAAEFuOm1BKgdJHH33kwqQzzjjDLrnkErvlllts5MiRaV47YcIEy5s3rwuWqlat6t5TsGDBlABrxIgRdtlll1mbNm2sRo0aLuxS4LRy5UrbsmWLbd261Vq0aGEtW7Z0//eqqAYNGuSCLAAAAAAAAMRJKDV//nw7ePCgq3rynH322TZnzhw7fPhwqtfqOQ1LSEhwf+vfs846y2bPnp0yXFVUnhNPPNHKlSvnni9evLjlz5/fNdFTVVaBAgWsWLFi9t1331nJkiWpkgIAAAAAAIiAXHac2LBhgwuM8uTJk/JcqVKlXD9TqmYqUaJEqteecsopqd6vQGnhwoXu/+vXr7cyZcqkGb5u3TpLSkqyXr16WYcOHVyYpaZ8eu6NN96wxx9/PMe/JwAAAAAAQDw4bkKpPXv2pAqkxPt7//79mXqt97q9e/dmOLxjx46uaZ9CKTX7mz59ugvEKleubHfffberqGrevLk99NBDKdVYfqrc0mfky5fPEhOPm2I0AAAAAACAqDluEhP1ERUMn7y/Ff5k5rXe69IbrmZ7nkKFCrlAyt+XlPqiUkfo6pvqt99+c3fpC0WB1N9//+2a+im08h7qo2rmzJn26aefpnree2iYHrVq1Uoz7JlnnnHDHnzwwTTDGjZs6IapX6xQ450yZYob3rhx4zTD1Jm7hr344otphqm/LW+aFNoFh//111/u+6pvr+Awr+P4b7/9Ns2wChUqpMwr/T84XO8RjSM4TJ8l+uzgMP2uHjXXDA5Xn2Ty8ssvpxl2xRVXpFTZhZqH6gxfFEYGh2n5EC0foX4bT6jxLlq0KCUIDQ578skn3bAvv/wyzTB/JaA63w8O//HHH92w++67L80w3W1SZs2alWZYkSJFUsarvtuCw8ePH++GPf/882mG6c6UsmrVqpDfVVWN0qRJkzTD/vvf/7ph+jc4TK8XvT/UePV5os8PDtN0iqY7OEzfz6PvHRyu+SOaX8Fhmq+i+Rwcpt/Do98pOFy/p+j3DQ7TciBaLkJ9V4+Wq+AwLX/e9io4TMutaDkONV4t96L1IDhM64to/QkO03rm0foXHM42gm3E8bCNOHjggL3++utphqlPSm8fqGOC4HD1aalh1113XZphqrbWsKFDh6YZpotc3ngrVqyYZrhu4qJhumFLcFisHUeMHj3aDfMuBPofN910kxv21ltvpRlWtmxZO3zoENsIthEpD44j/t+D44j/9+A4gm3E8b6N6BBDxxGZkZDs3VruGKcfTSuT7pyXK9f/K/D66aef3F31fv/991QVSWpyd+DAAXvhhRdSntPM04bk6aefdiu73nf11VenDL/ooovs/vvvt9atW6f63BkzZtiwYcPszTfftDvuuMMdkN1www320ksvuc94+OGHQ3bKrlAq2NeVFqAqVaq40Ep9VgV5G+YFCxbYrl27Ug1TlZaaKGpDpg7Z/QoXLmzVqlVzgZmquIJq1qxpuXPntsWLF9u2bdtSDStfvrw7uFMH70uXLk01TCHdaaed5v6veewtKmrOuPWHH6xKoUKWP08eW7lxo23ZsSPVe0sXLWonlihhO/fssSXr1qUaljtXLjutYkX3/79XrrQDBw+mGn7yCSdYofz5be3mzbYhML3FCxe2iqVK2Z79+23h6tWphmmhr1m5svv/P6tX295A8HhSmTJWrGBBN06N269IgQJWuWxZNy2apqAzKlWypMRE9130nfzKlSxppYoUsS07d9rK/9spewrkzWunlCvn/j83MH/l1PLlLV+ePLZi/XrbGvjNyxYrZmWLF7cdu3fb0n//TTUsb+7cVv3/drjzVqywg/93cO6peuKJVjBfPluzaZNt/L+dnKdE4cJWoVQp271vny1asybVMK1HZ1aq5P6/YPVq2xeYh5XKlLGiBQva+q1bbd2WLamG6XkN33/woM0PMQ81Xo1/8dq1tmvv3lTDypcqZSULF7ZNO3bY6o0bUw3T99D30fr05/LlacZbo2JFy5Mrly1fv962BebhCcWLW5lixdzzGp5qHubJY9XLl3f/13iD66t+N/1+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mzdvtk8//dQ++eQTmzVrVmSmEAAAAAAAADEn26GUn5ryqUmfHnPnzo3kqAEAAAAAABBvzfeef/5527lzZ5ZGXKtWrZT/b9myxZ555pmsTx0AAAAAAADiN5RatmyZ6zNqyJAhtnXr1kyPfM2aNfbaa6/ZpZdeaqtWrcrOdLqO1Pv162cNGjSw+vXru7v+HT58+IjvW758eaqAzDNjxgxr3bq11a5d2zp37mwrV65MGTZz5kz3ffVZo0ePTvW+u+66y6ZMmZKt7wIAAAAAABDvMtV876233nJ9RaliauDAgXb++edbo0aNrHr16lapUiUrXLiwHTp0yFVEKYhSf1I//fST/fLLL1a0aFF3Vz7dtS87hg4dap9//rn7/IMHD7pO1kuWLGldu3ZN9z1r166122+/3fbt25fqeU1jjx497M4777QLLrjABg0aZN27d7fx48dbQkKCq+q67rrrrGbNmu79CqjUNPGff/5x4drFF1+cre8CAAAAAAAQ7zLdp5TuqKdwRnfXGz58uH3zzTcuwEmvqqlcuXJ23333ubvw5c+fP9sTOmzYMFeldM4557i/e/Xq5aqw0gulVM302GOPWenSpdMM++ijj+zMM890fV+JwjYFbQrRzj33XFuyZIldcskl7g6DRYoUcUGUQindZVDhVXrfGwAAAAAAADnQ0XmhQoXslltuSenIXNVQah6nu+4pqClTpoxVqFDBGjdubDVq1LBI+ffff13VU7169VKeO/vss2316tW2fv1697lB3377rd19990uWFLzPL85c+akhFui0OyMM86w2bNnu1DqxBNPtHnz5lmePHls27ZtVrZsWVu0aJGtWLGCKikAAAAAAICjdfe9xMREq1OnjntEw4YNG9y//vCpVKlS7t9169aFDKWeffZZ9+/PP/8ccnzB96gpoMYl999/v2seeODAAdd8T6HUiy++aN26dctSlZSaNOoRa5KSko72JAAAEDGxuK+OdRyLAABiyaEYPRbJzP46rFAqJ+zdu9dVRIWye/du968qlzze//fv35/lz9qzZ0+qcXnj88aljtlV7aW/1Xxv8eLFtnTpUrvooovsiSeecFVYqqhS31N58+ZN93PUB1WsUVXZ6aeffrQnAwCAiFmwYIE7NsDxgWMRAECsWRCjxyJq4XbchFJqUhdsZudR1ZIoJPJCIC9ACqe/Ko0jGGZ5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fPfcc09OjBoAAAAAAADxVCm1fv16e/fdd+3XX391f9esWdM11Stbtmyq102bNs0effRR27hxY+SnFgAAAAAAAPETSq1YscLatWtnmzdvTnnur7/+si+++ML1H1WtWjU7cOCAPfvsszZ69GhLTk62q666KienGwAAAAAAALHefO/11193gVSPHj3s+++/t5kzZ9qLL77ohvXr18/27NljN910k3344YdWokQJGzhwoD3//PM5Pe0AAAAAAACI5UqpWbNm2aWXXmp33nlnynNXXnml7dy504VPTz/9tP3222/WpEkT+89//uOCKQAAAAAAACBboZSqpM4999w0z59//vl28OBB+/TTT6179+521113ZWZ0AAAAAAAAiHOZar63d+9eK1KkSJrnveeaN29OIAUAAAAAAIDIhlLpSUhIcP+2bt06O6MBAAAAAABAnMlWKOUpWLBgJEYDAAAAAACAOBGRUAoAAAAAAACIeEfnMnr0aJsxY0aq5/bv3++a8L3zzjs2fvz4VMP0vO7EBwAAAAAAAIQdSv3666/uEcr06dPTPEcoBQAAAAAAgGyFUsOGDcvMywAAAAAAAIDIhVL169fP3NgAAAAAAACATKCjcwAAAAAAAEQdoRQAAAAAAACijlAKAAAAAAAAUUcoBQAAAAAAgKgjlAIAAAAAAEDUEUoBAAAAAAAg6nJl5kWvvfZalkeckJBgd911VzjTBAAAAAAAgBiXqVBq8ODBWR4xoRQAAAAAAACyFUoNGzYsMy8DAAAAAAAAIhdK1a9fP3NjAwAAAAAAACIVSqVn69attnPnTktOTk557uDBg7Zjxw777rvvrGfPntkZPQAAAAAAAGJUWKHU5s2brXv37jZnzpwMX0coBQAAAAAAgFASLQyvvPKKzZ4922rWrGnnnXeee+7yyy+3hg0bWlJSkuXLl8+GDBkSzqgBAAAAAAAQB8IKpaZPn26NGze20aNHW9++fV3zvS5duti7775rw4cPt0OHDtnixYsjP7UAAAAAAACI31Bqw4YNLpSSkiVLuscff/zh/q5bt661adPGxo8fH9kpBQAAAAAAQHyHUnny5LG8efOm/F2hQgVbtGhRyt9q1rdmzZrITCEAAAAAAABiTlih1Mknn5yqk/NKlSrZ/PnzU/7evn277d+/PzJTCAAAAAAAgJgTVijVokUL++STT+y5556zvXv3us7OZ86caaNGjXL/jhw50ipXrhz5qQUAAAAAAED8hlI33nijXXjhhTZixAg7fPiwtWrVyqpUqWJPPfWUdezY0dauXWu33XZb5KcWAAAAAAAAMSFXOG/KnTu3DR482DXZK1CggHvugw8+cCHV1q1brWnTptagQYNITysAAAAAAADiOZTy1KhRI+X/RYoUse7du0dimgAAAAAAABDjwg6ldu3aZX/88Yf9+++/lpycHPI1bdq0yc60AQAAAAAAIEaFFUrNnTvXVUVt2rQp1fMKpxISElL+JZQCAAAAAABAxEKpF1980Xbs2GFdunRxd9lLTAyrv3QAAAAAAADEqbBCqb///ttuvfVW69mzZ+SnCAAAAAAAADEvrBIn3XGvePHikZ8aAAAAAAAAxIWwQqnWrVvbhAkTIj81AAAAAAAAiAthNd+75557XPO9a665xpo3b26lS5d2HZsH0dE5AAAAAAAAIhZK/fnnnzZ//nzX2flff/2VJpDi7nsAAAAAAACIeCjVt29f279/v3Xq1MmqVq1qSUlJ4YwGAAAAAAAAcSqsUGrBggXcfQ8AAAAAAADR7ei8cOHCVrJkyfA/FQAAAAAAAHEtrFDqsssus08//dQOHToU+SkCAAAAAABAzAur+V6zZs1sypQpriNz3X2vVKlSlitX2lFde+21kZhGAAAAAAAAxJiwQqkbb7wx5f8LFy5MNUx33fPuvkcoBQAAAAAAgIiFUs8//3w4bwMAAAAAAADCD6V2795tDRo0sKpVq4bzdgAAAAAAAMS5sDo6f/nll23ixImRnxoAAAAAAADEhbBCqcTERCtWrFjkpwYAAAAAAABxIaxQ6pZbbrH//ve/9ssvv9jhw4cjP1UAAAAAAACIaWH1KfXrr7/a9u3b3V34cufObUWLFrWkpKRUr9Hd97755ptITScAAAAAAADiPZRasmSJa75HEz4AAAAAAABELZSaOnVqWB8GAAAAAAAAhN2nlF9ycrJt3rzZdu7cyRwFAAAAAABAzlVKyZYtW+yll16yyZMn265du9xzhQoVsubNm9t9991nJUqUCHfUAAAAAAAAiHFhhVLq5Lxdu3a2fPlyK1++vJ1zzjl26NAhW7x4sX388cf2888/29ixY11IBQAAAAAAAEQklBo8eLCtWLHCnnzySRdO+X344Yfu+bfeesvuv//+cEYPAAAAAACAGBdWn1JfffWVXXnllWkCKbn++uvtiiuucM36AAAAAAAAgIiFUuvWrbM6deqkO7xu3bq2du1aiyR1qN6vXz9r0KCB1a9f3/r27WuHDx8+4vvUxLBWrVppnldwVr169VSPf/75xw1ToNaoUSO78MIL09xpsG3btjZv3rwIfjMAAAAAAID4E1bzvaJFi9qaNWvSHb5q1aqI9yc1dOhQ+/zzz23gwIF28OBB6927t5UsWdK6du2a7nsUjN1+++22b9++VM+r/6tly5bZiBEjrHLlyinPFy9e3A177LHH7JFHHnGhV58+feynn36yhIQEmzZtmpUuXdpOP/30iH43AAAAAACAeBNWpdS5555r77//vi1dujTNMHV2/sEHH7hqpkgaNmyY3XXXXa5TdVVL9erVy0aOHJnu66dMmWJXX3215cmTJ2RoduDAAVdBpZDJe+TKlcvdVXDr1q3WokULa9mypfv/5s2b3fsGDRpkPXv2jOj3AgAAAAAAiEdhVUr16NHDNWtr06aNtW7d2k455RT3/MKFC101U2JionXv3j1iE/nvv/+6qqd69eqlPHf22Wfb6tWrbf369VamTJk07/n222/t7rvvtipVqljnzp1TDVu0aJGdeOKJljdv3jTvU7VU/vz5XRM9VUoVKFDAihUrZt99952rzKJKCgAAAAAA4CiFUlWrVrX//ve/9vDDD9uYMWNSDatYsaI9++yzduqpp1qkbNiwwf3rD59KlSqV0r9VqFBK0yA///xzyGqu3Llzu6Z9f/75pwuuHnjgAVc5lZSU5KqwOnTo4JrsqSmfnnvjjTfs8ccfz9J0qymgHrFG8wMAgFgRi/vqWMexCAAglhyK0WORzOyvwwqlRM3ovvzyS1dRtGLFCtcR+UknneQqiVQplVV79+51FVGh7N692/3rb4rn/X///v1Z/iw1O9y2bZvrtFxNAkePHm033nijTZgwwVVQdezY0VWBKZQqWLCgTZ8+3VVQqf8pVV/NmTPHmjdvbg899JB7TXq8jtNjiarIqBYDAMSSBQsW2J49e472ZCCTOBYBAMSaBTF6LKIWbjkWSokCmTPOOMM9sktBT7CZnUedmnsBlNfkzgujdGCSVc8884wLwbzO2J988kmbNWuWjRs3zu644w73nL+jdvUl9eijj7qO0ZVgTpo0yVVS6S59CqfSo2oxNf8DAADHLt2BFwAA4GipHsfHImGHUrp73aeffmobN24MWWqmwOo///lPljpPVzoYiiqoXnrpJdeMr0KFCqma9KmD8qxSh+b+0EnTevLJJ4es1JoxY4a726CCtwEDBljjxo0tX758rrP1mTNnZhhKqVSN8nIAAI5t7KsBAMDRlBTHxyJhhVLq9FsdmR88eDDd12Q1lMpI2bJlrVy5ci4E8kIp/V/PhepP6kg6derkQjDvTnrq0FyBmKqfglQl1adPH/d/NUtUM0VREOf9HwAAAAAAAFEIpdTpt5rNPfLII3bmmWem6uspp7Rv39769etnJ5xwgvu7f//+dvPNN6cM37x5s2vapz6gjqRp06YubDrttNNcJ+fDhg2zHTt22FVXXZXqdT/++KMVLlzYfUepWbOma7pXv359++abb1z/UgAAAAAAAIhSKPX333+7vpfUGXi0dO3a1TZt2uSqm1Tadu2111qXLl1ShutvhUp33nnnEcel9+3bt8/doU/ND2vXrm1Dhw5N1aTPC990Vz5/hdXvv/9u7dq1s5YtW1qLFi0i/C0BAAAAAADiQ1ihlPpUKlasmEWTgig1o/Oa0gVNnTo1031VqWmhQjWvU/P0DB8+PNXfCq2GDBmS5WkHAAAAAABAaokWhvPOO8+mTZsWzlsBAAAAAACA8CqlevfubTfccIM98cQTdvnll7s74KkT8KCKFStGYhoBAAAAAAAQY8IKpdSXku5Y9+GHH9ro0aNDvkZN5ObNm5fd6QMAAAAAAEAMCiuUUiffCp0AAAAAAACAqIVSL7zwQlgfBgAAAAAAAIQdSvlt2rTJli9fbrly5bJKlSpZ0aJFmbMAAAAAAADImVBqzpw5rmJq9uzZKc+pSV/Dhg3t0UcftSpVqoQ7agAAAAAAAMS4sEKpP/74wzp16mQHDx60xo0bW+XKlS05OdkWL15sM2bMsPbt27sO0E866aTITzEAAAAAAADiM5R6/fXXLV++fDZs2DCrUaNGqmGqnLrpppvs5ZdftldffTVS0wkAAAAAAIAYkhjOm2bOnGmdO3dOE0hJnTp1rGPHjvbDDz9EYvoAAAAAAAAQg8IKpZKSkqxw4cLpDq9QoYIdOnQoO9MFAAAAAACAGBZWKNWkSRMbN26c7d+/P+TwiRMnWqNGjbI7bQAAAAAAAIjnPqV+/PHHNKHU119/bTfccIPdcsstVrVqVUtMTLQVK1bY+++/bwsXLrTXXnstp6YZAAAAAAAA8RBKqePyhISEVM/pbnt//vmn3XvvvWmeF92d7++//47ktAIAAAAAACCeQqkePXqkCaUAAAAAAACAHA2l7rzzziyPeNOmTeFMDwAAAAAAAOJAWB2dZ+Snn36ye+65xy666KJIjxoAAAAAAADxVCl1JNu3b7dPPvnEPvzwQ1u2bJnrVyp//vyRGDUAAAAAAABiULZCqTlz5tgHH3xgkyZNsn379rkwqnTp0tahQwdr165d5KYSAAAAAAAA8R1K7d6928aPH++qoubPn59ytz11hN6tWzfr3r275c6dOyemFQAAAAAAAPEWSimAGjVqlH322WcumFIYVaVKFWvVqpXVqVPHbrnlFjvzzDMJpAAAAAAAABCZUEpN8dRUT0FU+fLlrX379i6MOu2009zw1atXZ2Y0AAAAAAAAQOZDqdmzZ1vBggXttttus06dOlmBAgUy8zYAAAAAAAAgpETLhKuvvtpVSb366qt27rnnWufOnV1Tvi1btmTm7QAAAAAAAEDWK6X+85//2GOPPWYTJkywMWPG2C+//GK//vqrPfvss9awYUOrV6+e6+gcAAAAAAAAiGhH5/nz57drrrnGPZYvX24ff/yxjRs3zr7//nubPn26e81HH31kpUuXtlq1amV2tAAAAAAAAIhDmWq+F1SpUiW7//777dtvv7U333zTmjVrZklJSe7v66+/3gVXCq0AAAAAAACAiIVSKW9OTLQmTZrYgAEDXMXUQw89ZKeccor99ddfrrkfAAAAAAAAkK3me0dSvHhx69Kli3vMnTvXPvnkk0iNGgAAAAAAADEmYqGUn/qUol8pAAAAAAAA5EjzPQAAAAAAACAchFIAAAAAAACIOkIpAAAAAAAAHB+h1IMPPmi//vpr5KcGAAAAAAAAcSGsjs4///xzGz9+vJUvX96uvvpqa9OmjZUrVy7yUwcAAAAAAICYFFal1HfffWcPPPCAFSxY0F5//XVr1qyZ3XzzzS6s2rdvX+SnEgAAAAAAADElrEqpkiVL2k033eQe8+fPt08++cS++OIL69WrlxUuXNhatmzpKqhq164d+SkGAAAAAADAcS/bHZ3XqFHDHn74YVc99d5771mTJk1s9OjR1q5dO2vdurWNHDmS6ikAAAAAAABE/u5727dvt48++sjefPNNmzBhgiUnJ1vNmjVd875nnnnGLrvsMvvnn38i8VEAAAAAAACI1+Z7cvDgQfv2229dh+f6d//+/Va8eHHr1KmTXXPNNVatWjX3ulmzZtltt91mffr0sTFjxkRy2gEAAAAAABBPodTTTz/tKqK2bdtmiYmJ1qhRIxdENW3a1HLlSj3Ks846yzXp+/rrryM1zQAAAAAAAIjHUOr999+3k046yXV03qZNGytbtmyGr69atapVrlw53GkEAAAAAABAjAkrlBo+fLjVq1cv06/v1q1bOB8DAAAAAACAGBVWR+dZCaQAAAAAAACAsCql1CdUViUkJNg333yT5fcBAAAAAAAg9mUqlFJn5gAAAAAAAEBUQ6mpU6dG7AMBAAAAAAAASqAAAAAAAABwfNx9TzZt2mTffvutrV+/3vbv3x+yT6m77roru9MHAAAAAACAGBRWKPXXX39Zly5dbOfOnZacnBzyNYRSAAAAAAAAiGgo1b9/f9u7d691797dateubfny5QtnNAAAAAAAAIhTYYVSs2fPtk6dOtmdd94Z+SkCAAAAAABAzAuro3M1zatSpUrkpwYAAAAAAABxIaxQql69evbbb79FfmoAAAAAAAAQFzIVSh0+fDjV45577rEpU6bYm2++aWvXrrUDBw6keY0eAAAAAAAAQNh9Sp1++umuyZ6f7rr32muvuUcoev28efMyM3oAAAAAAADEmVyZba4HAAAAAAAARDWUGj58eMQ+EAAAAAAAAAiro/M+ffrYnDlz0h3+448/WteuXbMzXQAAAAAAAIhhYYVSY8eOtZUrV6Y7/JdffnEPAAAAAAAAIOzme8uXL7dWrVrZoUOHUp7r3bu3e6SnWrVqmRk1AAAAAAAA4lCmQqlKlSpZ9+7dbfr06e7v33//3T1XokSJNK9NSkqykiVL2h133BH5qQUAAAAAAED8hFKiUEoPqVGjhvXo0cMuv/zynJw2AAAAAAAAxHso5Td//vzITwkAAAAAAADiRlihlGfFihW2YcMGO3z4cMjh9erVy87oAQAAAAAAEKPCCqUURN1zzz02a9asDF/3999/hztdAAAAAAAAiGFhhVL9+vWzmTNnWv369e3MM8+0PHnyRH7KAAAAAAAAELPCCqWmTZtmrVq1sv79+0d+igAAAAAAABDzEsN50549e6xBgwaRnxoAAAAAAADEhbBCqWrVqtnSpUsjPzUAAAAAAACIC2GFUrfffruNGjXK5syZE/kpAgAAAAAAQMwLq0+pH374wYoXL27t2rWzChUqWKlSpSwxMXW+lZCQYCNGjIjUdAIAAAAAACDeQylVSXlWrlzpHkEKpQAAAAAAAICIhVLz588P520AAAAAAABA+H1KAQAAAAAAAFGvlJL9+/fb22+/bRMnTrRVq1ZZnjx57MQTT7QWLVpY165d3d8AAAAAAABAxEIpBVKdO3e22bNnW758+axixYp26NAhW7Zsmb3++us2depUGzlyJMEUAAAAAAAAItd8b8iQIS6QuvXWW+2nn36yzz77zCZMmGA///yze+6PP/6w9957L5xRAwAAAAAAIA6EFUp98cUXdvHFF9v999/vKqU8+v99991nTZs2dUEVAAAAAAAAELFQSn1InX/++ekO17CVK1eGM2oAAAAAAADEgbBCqQIFCtjmzZvTHa5h9CcFAAAAAACAiIZSdevWtVGjRtmWLVtCBlIffvihew0AAAAAAAAQsbvv3XHHHXbDDTdY69atrUOHDnbKKae45xcuXOjuurdt2zbX4TkAAAAAAAAQsVCqTp061q9fP3viiSfs9ddft4SEBPd8cnKyFSpUyF544QU755xzwhk1AAAAAAAA4kBYoZS0bNnSGjdubDNmzLAVK1a4QOqkk05ynZwrmAIAAAAAAAAiHkqJwqdLL700O6MAAAAAAABAHMpUKPXxxx+HNfJrr702rPcBAAAAAAAgtmUqlHr00UdT+o0SNdVLj16n4fqXUAoAAAAAAADZar6noKlUqVLWokULO+OMMzL7NgAAAAAAACC8UGrYsGH2xRdf2OTJk23EiBFWqVIla9WqlXtUrVo1M6MAAAAAAAAAUiRaJtSvX9+eeuopmz59ur399tt29tlnu3CqdevWduWVV9qQIUNs1apVmRkVAAAAAAAAkLlQypOUlGQXXHCB/ec//7EffvjBBg0aZKeccoq9+eabdskll9j111/vqqo2bNiQc1MMAAAAAACA+Aql/HLnzm1Nmza1/v37248//mivvvqqnXDCCfbKK69YkyZN7MYbb4zslAIAAAAAACD+OjrPSN68ea1hw4a2e/du2759uwupfvnll0iMGgAAAAAAADEoW6GUAqgpU6bYpEmTXBB18OBBK1GihLVv395atmwZuakEAAAAAABAfIdSXhA1ceLElCCqWLFidtVVV9lll11m5557riUmht0qEAAAAAAAAHEgU6HUtm3b0lREFS1a1N15T0GUmu6pE3QAAAAAAAAgYqHU+eefb4cOHbLChQvb5Zdfbi1atLBGjRoRRAEAAAAAACDnQilVRiUkJLg77qlSSo8j0eu/+eab8KYKAAAAAAAAMS1ToVS5cuVyfkoAAAAAAAAQNzIVSk2dOjXnpwQAAAAAAABxg9vkAQAAAAAAIOoIpQAAAAAAABB1hFIAAAAAAACIOkIpAAAAAAAARN1xE0olJydbv379rEGDBla/fn3r27evHT58ON3Xz54929q1a2d169a15s2b20cffZRq+IwZM6x169ZWu3Zt69y5s61cuTJl2MyZM61Zs2bus0aPHp3qfXfddZdNmTIlB74hAAAAAABA/DhuQqmhQ4fa559/bgMHDrTXX3/dPvvsM/dcKBs2bLBbb73VhVdjx451QdIzzzxj3377rRu+Zs0a69Gjh1199dX28ccfW4kSJax79+4u+BK99rrrrrNXXnnFnn32Wdu8ebN7/p9//rFVq1bZxRdfHMVvDgAAAAAAEHuyFUrt27fPpk+fbh9++KH9+++/tn37dhcI5YRhw4a5cOmcc85xFUy9evWykSNHhnytKplKlSpl9913n1WuXNlatWplbdq0cUGWqGrqzDPPtJtvvtmqVatmzz//vK1evdp++eUXN3zJkiV2ySWXWMOGDa1IkSIuiJI33njDhVcJCQk58h0BAAAAAADiRdih1OTJk+2iiy5yFUlPPvmkC3LUZK5p06bpVjCFS4HX2rVrrV69einPnX322S5IWr9+fZrXX3DBBS5oCtq5c6f7d86cOS7c8uTPn9/OOOMMN/1y4okn2rx589z4t23bZmXLlrVFixbZihUrqJICAAAAAACIgFzhvGnWrFl27733WqVKlVwzt7feess9X6ZMGStXrpzr76lixYquX6ZI8KqvNH6PKqFk3bp1qZ6XChUquIdn06ZN9sUXX9idd96ZMr7ge0qWLOnGJffff7/17t3bDhw4YLfffrsLpV588UXr1q1blqqkDh065B6xJikp6WhPAgAAEROL++pYx7EIACCWHIrRY5HM7K/DCqUGDx5s5cuXtzFjxtiePXvszTffdM/XqFHDPaeg6r333stSKLV3715XERXK7t273b958uRJec77//79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3XXXXXbw4MEsjdOrpqJJHwAAAAAgPTTfwzFDQcbrr79u3bp1s5tvvtl1sq3+oHTXOzXtmzFjhnud+m8qVKhQpsap96xbty7d4foM725zmaWmhaqOUoijQCfcu8up+d/PP//sOhjXQ00SVQn2008/2U033ZSqyVxO0539dKe9a665xtq3b+/6jfriiy9szpw5dv/997s+v7LC6//qgw8+cB2ghxPcAQAAAABiG6EUjikKed5//30bM2aMjRs3zlUjqWJHd4vTXekURg0cONDdDa5v375Wp06dDMf35ptvZjj866+/znIoJQpZFEq1atUq7D6WTjrpJBs9erS9+uqrNmrUKNc8UZ2cP/fcc3bttddaNKlCTQHSgAEDbOjQoa4ySp2wv/DCC65CLasaNmzo7haouwgqZFOIp7v0AQAAAADgSUjO7G3UkGnqF0n9DZ122mlhBR7ImPpzeuedd1w1lYIdAAAQf9aNHGkH1q8/2pMBxKzcZcrYCR06HO3JABDjqJTCcadixYr25JNPHu3JAAAAAAAA2UBH5wAAAAAAAIg6QikAAAAAAABEHaEUAAAAAAAAoo5QCgAAAAAAAFFHKAUAAAAAAICoI5QCAAAAAABA1BFKAQAAAAAAIOoIpQAAAAAAABB1hFJAnEtOTo7q+wAAAAAAEEIpRNTdd99t5557bprn//jjD6tevbqdddZZduDAgVTD/vzzTzfs008/jei0NG3a1B566KEsvadTp05uWvyPM88805o0aWJPPfWUbdu2LUvj0+drOrIzTeH4559/7N5777Xzzz/fTX+jRo3snnvusfnz56d63cyZM+22227L8vi//vpre/DBByM4xQAAAACAeJPraE8A0ko+fNgSEhOPy2lo2LChTZo0yZYsWWInn3xyyvPff/+9FStWzLZu3Wq///671a9fP2XYb7/95v5VgHIsOP300+2JJ55I+Vsh2l9//WUvv/yy/f333/bBBx9YQkJCWOMeOHCgFSpUyHLSwoUL7frrr7c6derYo48+aiVLlrR169bZiBEj7LrrrrNhw4a5YfLRRx/Z4sWLs/wZ7733Xg5MOQAAAAAgnhBKHYMUBm2aONEObN58VD4/d4kSVvKyy8J6r0IpmTVrVqpQavr06daiRQv77rvvXEDlD6V+/fVXO/XUU6106dJ2LFBo5IU2nnr16tmuXbvs9ddf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mDRpkitWrJh75513ol5c4PXXX3e33367u+SSS1zlypVd79693d9//x16zpAhQ+z10W6dO3e25yxatCjR51SpUiW0rMSeo9vatWuPWD+9NqnXpIX9+/e7GjVq2DYFrVmzxjVu3Nhdeumlrnr16u6zzz5LdBnR9pn2b82aNd3s2bOPynpqfyW23wAAyIwijwuKFy/urrjiCvfggw+6P//8M/S8+++/P+x5JUuWtNcOGjTIHThwIPS8H374wTVr1sxddtlldmvQoIFbsGBBssdUDRs2jPr43XffnaZ/m7UNWodY6Lhl/vz5abIeANIHBp0DyBCmT5/uzj//fPfee++5unXrhj328MMPux9//NE9+uijrkyZMm79+vXu2Wefdc2bN3djx461+W6iAzUFLdH6nIOiBTVZs2YN+1nL0fIi5c2b94j73n33XXfo0CH7vk+fPvb1P//5j0vLiy107NjR/frrr2H3q1u7TZs2rmjRom7ixInuo48+cm3btnUzZsxwBQsWjLqsyH22bds298orr7gOHTrYZ3LBBRek2XYAAJBZdenSxU4O+ZNrK1ascN27d3ePP/64GzNmTOh5TZs2tZt/no539DdexyX6G75hwwbXqFEj16RJE1tmlixZ7O9zy5Yt3bhx4+xkUjTZs2d3X3/9tdu+fbvLnTt36P6//vrLQq70QtukwK5SpUrHelUApBFCKQDp3pYtW9wXX3zh+vbta1VNOmt23nnn2WNTp051c+fOtWBFoZXosREjRriqVataiKUzfv4A7Mwzz0z2/WJ5Tp48eWJ6XmRQ5QOwWF+bUjqo1cFqtHGBCxcutH339ttv2xUwChcubPtVAdVDDz0UdXmR+0zfK1j78MMP3bx58+xAGAAApEyuXLnC/r6eddZZrl27du6xxx5zO3bssMdFf68jn6eKZf0dViilyuVzzz3Xvvf0N12Bk/6+JxZK5c+f34ItVSFped7HH3/sypYt67799ts02nIACEf7HoB074MPPrCDM7Xn6SBKQZM3efJkd9NNN4UCKe+MM86wlr6bb77ZpXc68KtXr5611Kmk/a233go9phBOrYgPPPCAHSTWrl3bffPNN4ku68svv3RXXnmlGz9+/BGPfffdd1b6H7wka7ly5dySJUtStL46iM2WLZvdfKvg008/7a677jpXqlQp24bg++tnVawpHFQlW61a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bNniPvjgA9epUyf34YcfukGDBrmsWbPa8xVGPfDAA+7WW2+134WMoFu3bm7BggXu448/PtarAgDAMUEoBQAArMqmVq1aR9xfp04d16pVK7tNnz7dZcuW8kOHn376yb6q+qdq1aqh+4OhUkooaIlc159//tn9+eefYfdp+al9j3jz++iJJ56wqqdYRPu8FC7mypXLvfHGGxZ0NW3a9F+vW/Azi5fvv//eAqk777zT9e3bN+wx/S4+/PDDbtasWW7GjBmuZs2aoVBqxYoVLiNReJiaf1MAAGQWtO8BAIBEXXfdda5x48bWYjR16tRULWP//v32VWEJkt5Hp5566r9eVu3ate3r4sWLXUb11Vdf2dfKlSsf8ViWLFlcy5YtM/w2AgAAQikAAJCMu+66y75Gthj99ddf7sknn7T5N5r3owChd+/eYfOMNJ9o+PDh9n3Dhg3tZ80tijbvST+rnUlzhFQhU7ZsWXfllVdaq9bGjRsTnSnVuXNn17Vr11ClkR5LaqbU/PnzXaNGjdzll19u76GKozFjxoTNKPLvMWLECDd+/HhrqdOsJ83F6tmzp9u5c2dM+27JkiXWUnbFFVfYPlJrmeZraf5V8H3ef/99+/nGG2+0n3V/avl2Ns1XClKoqEoqVcXppu81myk50WYc7dq1yw0YMMDdcssttg/12euz85+TtlHboUqmSKpwSm7Wlw/n3n33Xbdnz54jHte+VMumPgtRe6ha/ILvrX3oZ2SpckxVY3qdtsVX1cXyO+z3gWZZKQS77777rCVU7a6q/vv999+PWD/ta7WRaj8r2NVsNm2v//33n7vef926dfa9tiEymLv//vttGWph1HutXr06iU8KAICMh3phAACQpAsvvNDlyJHD/fjjj6H71CpVr149q/BRuHHOOedYC51axj755BP76mc/KYRQoKVw5qKLLnKFCxe2/xGP5rPPPrOA5t5777XlLly40IITvd9bb70V9TV6noIYBRjB2VjRaN6SBoFfcMEFNkD75JNPdh999JHr06ePhQUKBk444X/n7LQdCmDq16/vzj77bNuWsWPH2swtBQ1JUSDTsWNH2w8KMvLly2fbp/f49NNP3euvvx7aR9q2b7/91kI1zU7S/amlZYvCosj5TKVKlXJt27a1+6ZNm2aBn8IdH+rFQiGRPp/ly5db65wq6fT5aL9oHyp8Udvn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",
+      "text/plain": [
+       "<Figure size 1200x800 with 1 Axes>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "# --- Step 30b: Visualize the Interaction Effects (Final, Corrected) ---\n",
+    "\n",
+    "# --- Extract coefficients by their integer position using NumPy array indexing ---\n",
+    "\n",
+    "# For Model 1 (ACEEE) from the summary table:\n",
+    "# Position 0: Intercept\n",
+    "# Position 1: Downgrade_Event\n",
+    "# Position 2: Strong_Policy_ACEEE\n",
+    "# Position 3: Downgrade_Event:Strong_Policy_ACEEE\n",
+    "eff_weak_aceee   = model1_robust.params[1]  # Effect for weak states\n",
+    "eff_strong_aceee = model1_robust.params[1] + model1_robust.params[3] # Main Effect + Interaction\n",
+    "\n",
+    "# For Model 2 (RPS) from the summary table:\n",
+    "# Position 0: Intercept\n",
+    "# Position 1: Downgrade_Event\n",
+    "# Position 2: has_rps\n",
+    "# Position 3: Downgrade_Event:has_rps\n",
+    "eff_weak_rps   = model2_robust.params[1] # Effect for weak states\n",
+    "eff_strong_rps = model2_robust.params[1] + model2_robust.params[3] # Main Effect + Interaction\n",
+    "\n",
+    "\n",
+    "# Create a dataframe for plotting\n",
+    "plot_data = pd.DataFrame({\n",
+    "    'Policy_Type': ['ACEEE Top 10 Rank', 'ACEEE Top 10 Rank', 'RPS Mandate', 'RPS Mandate'],\n",
+    "    'Firm_Environment': ['Weak Policy State', 'Strong Policy State', 'Weak Policy State', 'Strong Policy State'],\n",
+    "    'Effect': [eff_weak_aceee, eff_strong_aceee, eff_weak_rps, eff_strong_rps]\n",
+    "})\n",
+    "\n",
+    "# --- Create the Plot ---\n",
+    "plt.figure(figsize=(12, 8))\n",
+    "sns.set_style(\"whitegrid\")\n",
+    "\n",
+    "barplot = sns.barplot(x='Policy_Type', y='Effect', hue='Firm_Environment', data=plot_data,\n",
+    "                        palette={'Weak Policy State': 'lightcoral', 'Strong Policy State': 'darkred'})\n",
+    "\n",
+    "# Add titles and labels\n",
+    "plt.title('Stock Market Reaction to ESG Downgrades by State Policy Environment', fontsize=18, fontweight='bold', pad=20)\n",
+    "plt.ylabel('Average Monthly Abnormal Return (Alpha %)', fontsize=14)\n",
+    "plt.xlabel('Definition of Policy Strength', fontsize=14)\n",
+    "\n",
+    "# Format Y-axis as percentage\n",
+    "from matplotlib.ticker import PercentFormatter\n",
+    "barplot.yaxis.set_major_formatter(PercentFormatter(1.0, decimals=2))\n",
+    "\n",
+    "plt.axhline(0, color='black', linewidth=1, linestyle='--')\n",
+    "plt.legend(title='Firm HQ Environment', title_fontsize='13', fontsize='12')\n",
+    "\n",
+    "# Add value labels on top of the bars\n",
+    "for p in barplot.patches:\n",
+    "    label_text = f\"{p.get_height()*100:.2f}%\"\n",
+    "    barplot.annotate(label_text, \n",
+    "                     (p.get_x() + p.get_width() / 2., p.get_height()), \n",
+    "                     ha = 'center', va = 'center', \n",
+    "                     xytext = (0, -15 if p.get_height() < 0 else 15), \n",
+    "                     textcoords = 'offset points',\n",
+    "                     fontweight='bold', color='white' if p.get_height() < -0.001 else 'black')\n",
+    "\n",
+    "sns.despine()\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **Analysis of the Final Visualization**\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This coefficient plot provides a powerful and intuitive summary of your regression findings. It visualizes the total estimated market reaction to an ESG downgrade, conditional on the firm's state-level policy environment.\n",
+    "\n",
+    "*   **Chart Structure:** The chart correctly compares two different models (or \"definitions of policy strength\") side-by-side. Within each model, it displays the calculated effect for firms in \"Weak Policy States\" (light red) versus \"Strong Policy States\" (dark red). The Y-axis properly represents the size of the abnormal return (alpha), with the dashed line at 0.00% serving as the crucial benchmark for \"no effect.\"\n",
+    "\n",
+    "*   **ACEEE Top 10 Rank Model (Left Side):**\n",
+    "    *   This group of bars shows the results from Model 1. The abnormal return for a downgrade is negative in both weak policy states (-0.24%) and strong policy states (-0.25%).\n",
+    "    *   **Visual Insight:** The key takeaway is how similar the two bars are in height. There is almost no visual difference between the market's reaction in a weak vs. a strong policy state. This graphically confirms the statistical result from the regression: the interaction term was not significant, meaning we cannot distinguish between these two effects.\n",
+    "\n",
+    "*   **RPS Mandate Model (Right Side):**\n",
+    "    *   This group of bars shows the results from Model 2. The abnormal return for a downgrade is negative for both groups: -0.28% for weak states and -0.24% for strong states.\n",
+    "    *   **Visual Insight:** This side tells a slightly different but consistent story. Visually, the underperformance appears slightly *less* severe in states with an RPS mandate. However, as with the ACEEE model, the two bars are very close in height. This again confirms the statistical finding that the interaction term was not significant. The visual difference is minimal and likely due to random statistical noise.\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### **Overall Conclusion from the Graph**\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "The plot masterfully conveys the main finding of your original research. While ESG downgrades are associated with a negative market reaction (all bars are below the zero line), the magnitude of this reaction **does not appear to depend on the stringency of the state's environmental policies.** The visual differences between the \"Weak\" and \"Strong\" policy bars are negligible for both the ACEEE and RPS models, reinforcing the non-significant p-values on the interaction terms in your regressions.\n"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "3.11.4",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.4"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
