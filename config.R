@@ -1,6 +1,7 @@
 # ==============================================================================
-# Project Configuration File
-# ESG Dissertation Project: Replication and Extension of Shanaev & Ghimire (2022)
+# 🔧 PROJECT CONFIGURATION FILE
+# 🎓 ESG Dissertation Project: Replication and Extension of Shanaev & Ghimire (2022)
+# 📊 King's College London - Pollyanna Whitenburgh
 # ==============================================================================
 
 # Load necessary packages for configuration
@@ -10,7 +11,7 @@ suppressPackageStartupMessages({
 })
 
 # ==============================================================================
-# PROJECT PATHS
+# 📁 PROJECT PATHS
 # ==============================================================================
 
 # Set project root using 'here' package for reproducibility
@@ -42,7 +43,7 @@ SCRIPTS_PATH <- file.path(PROJECT_ROOT, "01_scripts")
 FUNCTIONS_PATH <- file.path(SCRIPTS_PATH, "01_functions")
 
 # ==============================================================================
-# ANALYSIS PARAMETERS
+# ⚙️ ANALYSIS PARAMETERS
 # ==============================================================================
 
 # Portfolio construction parameters
@@ -58,7 +59,7 @@ TOP_POLICY_STATES <- 10      # Top N states for "strong policy" (ACEEE)
 POLICY_QUARTILES <- 4        # Number of quartiles for policy strength
 
 # ==============================================================================
-# DATE PARAMETERS
+# 📅 DATE PARAMETERS
 # ==============================================================================
 
 # Full sample period
@@ -73,7 +74,7 @@ DATE_FORMAT <- "%Y-%m-%d"
 MONTH_FORMAT <- "%Y-%m"
 
 # ==============================================================================
-# MODEL SPECIFICATIONS
+# 📊 MODEL SPECIFICATIONS
 # ==============================================================================
 
 # Factor model definitions
@@ -89,7 +90,7 @@ SIG_LEVELS <- c(0.01, 0.05, 0.10)
 SIG_STARS <- c("***", "**", "*")
 
 # ==============================================================================
-# DATA SPECIFICATIONS
+# 📋 DATA SPECIFICATIONS
 # ==============================================================================
 
 # ESG rating categories and their numeric mapping
@@ -109,7 +110,7 @@ ESG_LEADER_THRESHOLD <- 3  # Numeric score <= 3 is "Leader" (Negligible, Low, or
 MISSING_CODES <- c("", "NA", "N/A", "#N/A", "NULL", "None")
 
 # ==============================================================================
-# OUTPUT FORMATTING
+# 🎨 OUTPUT FORMATTING
 # ==============================================================================
 
 # Table formatting
@@ -131,7 +132,7 @@ COLOR_STRONG_POLICY <- "#1565C0"  # Blue for strong policy states
 COLOR_WEAK_POLICY <- "#FF8F00"    # Orange for weak policy states
 
 # ==============================================================================
-# LOGGING AND DEBUGGING
+# 🔍 LOGGING AND DEBUGGING
 # ==============================================================================
 
 # Create log file name with timestamp
@@ -143,7 +144,7 @@ DEBUG_MODE <- FALSE  # Set TRUE for verbose output
 SAVE_INTERMEDIATE <- TRUE  # Save intermediate datasets
 
 # ==============================================================================
-# UTILITY FUNCTIONS FOR CONFIG
+# 🛠️ UTILITY FUNCTIONS FOR CONFIG
 # ==============================================================================
 
 #' Create a timestamped log message
@@ -198,7 +199,7 @@ ensure_directories <- function() {
 }
 
 # ==============================================================================
-# INITIALIZE ON LOAD
+# 🚀 INITIALIZE ON LOAD
 # ==============================================================================
 
 # Ensure all directories exist
@@ -217,5 +218,5 @@ if (check_data_files()) {
 }
 
 # ==============================================================================
-# END OF CONFIGURATION
+# ✅ END OF CONFIGURATION
 # ==============================================================================
