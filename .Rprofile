@@ -1,4 +1,4 @@
-# Project-specific R startup
+# 🔧 Project-specific R startup
 
 # Activate renv
 if (file.exists("renv/activate.R")) {
@@ -15,7 +15,7 @@ options(
 # Welcome message
 cat("\n")
 cat("=============================================\n")
-cat("   ESG Dissertation Project Environment      \n")
+cat("🎓 ESG Dissertation Project Environment 📊 \n")
 cat("=============================================\n")
-cat("\nRun 'source(\"RUN_ALL.R\")' to execute full analysis\n")
+cat("\n🚀 Run 'source(\"RUN_ALL.R\")' to execute full analysis\n")
 cat("\n")
