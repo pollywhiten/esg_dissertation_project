@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESG Dissertation Project - Reports Dashboard</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300"><defs><radialGradient id="gradient"><stop offset="0%" stop-color="rgba(255,255,255,0.1)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient></defs><circle cx="200" cy="150" r="100" fill="url(%23gradient)"/><circle cx="800" cy="100" r="150" fill="url(%23gradient)"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .header h1 {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header .subtitle {
+            font-size: 1.6em;
+            opacity: 0.9;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 30px;
+            padding: 60px 40px;
+        }
+        
+        .report-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .report-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .card-header {
+            padding: 30px 30px 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .card-title {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .card-description {
+            color: #6c757d;
+            font-size: 1.1em;
+            line-height: 1.5;
+        }
+        
+        .card-content {
+            padding: 25px 30px;
+        }
+        
+        .features {
+            list-style: none;
+            margin-bottom: 25px;
+        }
+        
+        .features li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .features li:last-child {
+            border-bottom: none;
+        }
+        
+        .feature-icon {
+            margin-right: 12px;
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .view-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .view-button:hover {
+            background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 40px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .footer p {
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .tech-badge {
+            background: #e9ecef;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #495057;
+            border: 1px solid #ced4da;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 40px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 1.1em;
+        }
+        
+        @media (max-width: 768px) {
+            .reports-grid {
+                grid-template-columns: 1fr;
+                padding: 30px 20px;
+            }
+            
+            .header {
+                padding: 40px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2.5em;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 ESG Dissertation Reports</h1>
+            <p class="subtitle">Comprehensive Analysis of ESG Rating Changes and Stock Market Performance</p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">5</div>
+                <div class="stat-label">Professional Reports</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">15+</div>
+                <div class="stat-label">Interactive Charts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">25+</div>
+                <div class="stat-label">Mathematical Models</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Reproducible Results</div>
+            </div>
+        </div>
+        
+        <div class="reports-grid">
+            <div class="report-card">
+                <div class="card-header">
+                    <span class="card-icon">📋</span>
+                    <h3 class="card-title">Executive Summary</h3>
+                    <p class="card-description">Comprehensive overview of key findings, methodology, and economic implications</p>
+                </div>
+                <div class="card-content">
+                    <ul class="features">
+                        <li><span class="feature-icon">✨</span> Interactive performance charts</li>
+                        <li><span class="feature-icon">📈</span> Key statistics and metrics</li>
+                        <li><span class="feature-icon">💡</span> Main research insights</li>
+                        <li><span class="feature-icon">🎯</span> Policy implications</li>
+                    </ul>
+                    <a href="executive_summary.html" class="view-button">View Executive Summary</a>
+                </div>
+            </div>
+            
+            <div class="report-card">
+                <div class="card-header">
+                    <span class="card-icon">🔬</span>
+                    <h3 class="card-title">Methodology Report</h3>
+                    <p class="card-description">Detailed technical documentation of research methods and statistical models</p>
+                </div>
+                <div class="card-content">
+                    <ul class="features">
+                        <li><span class="feature-icon">🧮</span> Mathematical formulations</li>
+                        <li><span class="feature-icon">📊</span> Statistical methodologies</li>
+                        <li><span class="feature-icon">🔍</span> Robustness checks</li>
+                        <li><span class="feature-icon">📚</span> Literature references</li>
+                    </ul>
+                    <a href="methodology_report.html" class="view-button">View Methodology</a>
+                </div>
+            </div>
+            
+            <div class="report-card">
+                <div class="card-header">
+                    <span class="card-icon">📊</span>
+                    <h3 class="card-title">Interactive Dashboard</h3>
+                    <p class="card-description">Dynamic visualizations with interactive charts and policy analysis tools</p>
+                </div>
+                <div class="card-content">
+                    <ul class="features">
+                        <li><span class="feature-icon">🎛️</span> Interactive data exploration</li>
+                        <li><span class="feature-icon">🗺️</span> State-level policy maps</li>
+                        <li><span class="feature-icon">📈</span> Real-time chart updates</li>
+                        <li><span class="feature-icon">🔄</span> Filterable data tables</li>
+                    </ul>
+                    <a href="interactive_dashboard.html" class="view-button">View Dashboard</a>
+                </div>
+            </div>
+            
+            <div class="report-card">
+                <div class="card-header">
+                    <span class="card-icon">📄</span>
+                    <h3 class="card-title">Publication Summary</h3>
+                    <p class="card-description">Journal-style academic summary with formatted tables and references</p>
+                </div>
+                <div class="card-content">
+                    <ul class="features">
+                        <li><span class="feature-icon">📝</span> Academic writing style</li>
+                        <li><span class="feature-icon">📋</span> Publication-ready tables</li>
+                        <li><span class="feature-icon">💰</span> Economic significance</li>
+                        <li><span class="feature-icon">🎓</span> Scholarly references</li>
+                    </ul>
+                    <a href="publication_summary.html" class="view-button">View Publication</a>
+                </div>
+            </div>
+            
+            <div class="report-card">
+                <div class="card-header">
+                    <span class="card-icon">🎤</span>
+                    <h3 class="card-title">Conference Presentation</h3>
+                    <p class="card-description">Professional slide deck with reveal.js animations and visual highlights</p>
+                </div>
+                <div class="card-content">
+                    <ul class="features">
+                        <li><span class="feature-icon">🎬</span> Animated slide transitions</li>
+                        <li><span class="feature-icon">📊</span> Visual data storytelling</li>
+                        <li><span class="feature-icon">🎯</span> Key findings highlight</li>
+                        <li><span class="feature-icon">⚡</span> Full-screen presentation</li>
+                    </ul>
+                    <a href="conference_presentation.html" class="view-button">View Presentation</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>ESG Rating Changes and Stock Returns: A Comprehensive Analysis</strong></p>
+            <p>Academic Dissertation Project | Generated with Professional HTML Reports</p>
+            
+            <div class="tech-stack">
+                <span class="tech-badge">📊 Chart.js</span>
+                <span class="tech-badge">🧮 MathJax</span>
+                <span class="tech-badge">📱 Responsive CSS</span>
+                <span class="tech-badge">🎨 Modern Design</span>
+                <span class="tech-badge">📈 D3.js</span>
+                <span class="tech-badge">📋 DataTables</span>
+                <span class="tech-badge">🎬 Reveal.js</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Add smooth scrolling and interaction effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate cards on scroll
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+            
+            // Observe all report cards
+            document.querySelectorAll('.report-card').forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(card);
+            });
+            
+            // Add click tracking
+            document.querySelectorAll('.view-button').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const reportName = this.href.split('/').pop().replace('.html', '');
+                    console.log(`Opening report: ${reportName}`);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
