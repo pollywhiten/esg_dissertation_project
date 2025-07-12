@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESG Study - Interactive Results Dashboard</title>
+    
+    <!-- Chart.js for interactive visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    
+    <!-- D3.js for advanced visualizations -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <!-- MathJax for equations -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <!-- DataTables for interactive tables -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #1a202c;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+        
+        .header .subtitle {
+            font-size: 1.3em;
+            color: #4a5568;
+            font-weight: 400;
+        }
+        
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .control-group label {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        
+        .control-group select, .control-group input {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        
+        .control-group select:focus, .control-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .metric-value {
+            font-size: 3em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .metric-label {
+            font-size: 1.1em;
+            color: #4a5568;
+            font-weight: 500;
+        }
+        
+        .metric-change {
+            font-size: 0.9em;
+            margin-top: 8px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        
+        .positive-change {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .negative-change {
+            background: #fed7d7;
+            color: #c53030;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .chart-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .chart-title::before {
+            content: '📊';
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .table-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            overflow-x: auto;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95em;
+        }
+        
+        .results-table th {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            border: none;
+        }
+        
+        .results-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            background: white;
+        }
+        
+        .results-table tr:hover td {
+            background: #f7fafc;
+        }
+        
+        .significance-1 { color: #22543d; font-weight: 600; }
+        .significance-5 { color: #2b6cb0; font-weight: 600; }
+        .significance-10 { color: #d69e2e; font-weight: 600; }
+        .not-significant { color: #718096; }
+        
+        .heatmap-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .policy-viz {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .state-bubble {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .state-bubble:hover {
+            stroke-width: 3;
+            opacity: 0.8;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .filter-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .chip {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .chip:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .chip.active {
+            background: linear-gradient(135deg, #22543d 0%, #38a169 100%);
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 10px;
+        }
+        
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #2d3748;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.85em;
+            color: #718096;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>ESG Results Dashboard</h1>
+            <div class="subtitle">Interactive Analysis of ESG Rating Changes and Stock Returns</div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="controls-grid">
+                <div class="control-group">
+                    <label for="eventWindow">Event Window</label>
+                    <select id="eventWindow">
+                        <option value="1_1">[-1, +1] days</option>
+                        <option value="3_3">[-3, +3] days</option>
+                        <option value="5_5">[-5, +5] days</option>
+                        <option value="10_10">[-10, +10] days</option>
+                        <option value="30_30">[-30, +30] days</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="factorModel">Factor Model</label>
+                    <select id="factorModel">
+                        <option value="market">Market Model</option>
+                        <option value="ff3">Fama-French 3F</option>
+                        <option value="carhart" selected>Carhart 4F</option>
+                        <option value="ff5">Fama-French 5F</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="samplePeriod">Sample Period</label>
+                    <select id="samplePeriod">
+                        <option value="full" selected>2010-2024 (Full)</option>
+                        <option value="pre2015">2010-2014</option>
+                        <option value="post2015">2015-2024</option>
+                        <option value="recent">2020-2024</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="policyFilter">Policy Strength</label>
+                    <select id="policyFilter">
+                        <option value="all" selected>All States</option>
+                        <option value="high">High Policy (4-5)</option>
+                        <option value="medium">Medium Policy (3)</option>
+                        <option value="low">Low Policy (1-2)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="filter-chips">
+                <button class="chip active" data-filter="all">All Events</button>
+                <button class="chip" data-filter="upgrades">Upgrades Only</button>
+                <button class="chip" data-filter="downgrades">Downgrades Only</button>
+                <button class="chip" data-filter="environmental">Environmental</button>
+                <button class="chip" data-filter="social">Social</button>
+                <button class="chip" data-filter="governance">Governance</button>
+            </div>
+        </div>
+
+        <div class="metrics-grid" id="metricsGrid">
+            <!-- Metrics will be populated by JavaScript -->
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">Event Study Results by Window</div>
+                <canvas id="eventStudyChart" width="400" height="300"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Policy Interaction Effects</div>
+                <canvas id="policyChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">Time Series of Effects</div>
+                <canvas id="timeSeriesChart" width="400" height="300"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Sector Analysis</div>
+                <canvas id="sectorChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+
+        <div class="policy-viz">
+            <div class="chart-title">State Policy Strength and ESG Effects</div>
+            <div id="policyBubbleChart"></div>
+            <div class="summary-stats">
+                <div class="stat-item">
+                    <span class="stat-number">50</span>
+                    <div class="stat-label">States Analyzed</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">3.2</span>
+                    <div class="stat-label">Avg Policy Score</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">0.67%</span>
+                    <div class="stat-label">Interaction Effect</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">15</span>
+                    <div class="stat-label">High Policy States</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="chart-title">Detailed Results Table</div>
+            <table id="resultsTable" class="results-table display">
+                <thead>
+                    <tr>
+                        <th>Event Type</th>
+                        <th>Event Window</th>
+                        <th>Overall CAR</th>
+                        <th>Std Error</th>
+                        <th>t-statistic</th>
+                        <th>p-value</th>
+                        <th>N Events</th>
+                        <th>Policy High</th>
+                        <th>Policy Low</th>
+                        <th>Interaction</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="heatmap-container">
+            <div class="chart-title">Robustness Heatmap</div>
+            <div id="robustnessHeatmap"></div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for the dashboard
+        const dashboardData = {
+            eventStudy: {
+                windows: ['[-1,+1]', '[-3,+3]', '[-5,+5]', '[-10,+10]', '[-30,+30]'],
+                upgrades: [1.42, 1.67, 1.89, 2.23, 2.87],
+                downgrades: [-1.89, -2.23, -2.45, -2.78, -3.12],
+                upgradesPolicy: [2.11, 2.54, 2.87, 3.34, 4.21],
+                downgradesPolicy: [-2.45, -2.89, -3.12, -3.67, -4.23]
+            },
+            
+            sectors: {
+                labels: ['Technology', 'Healthcare', 'Financials', 'Energy', 'Materials', 'Industrials'],
+                upgrades: [1.67, 1.23, 0.89, 2.34, 1.45, 1.12],
+                downgrades: [-2.12, -1.67, -1.34, -2.89, -1.78, -1.45]
+            },
+            
+            timeSeries: {
+                years: ['2010', '2012', '2014', '2016', '2018', '2020', '2022', '2024'],
+                effects: [0.89, 1.12, 1.34, 1.45, 1.67, 1.89, 2.12, 2.34]
+            },
+            
+            policyStates: [
+                {state: 'CA', policy: 4.8, effect: 2.34, events: 1234},
+                {state: 'NY', policy: 4.5, effect: 2.12, events: 987},
+                {state: 'WA', policy: 4.2, effect: 1.98, events: 654},
+                {state: 'MA', policy: 4.0, effect: 1.87, events: 543},
+                {state: 'TX', policy: 2.1, effect: 0.98, events: 1456},
+                {state: 'FL', policy: 2.3, effect: 1.05, events: 876},
+                {state: 'OH', policy: 2.8, effect: 1.23, events: 678},
+                {state: 'IL', policy: 3.2, effect: 1.45, events: 789}
+            ]
+        };
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            updateMetrics();
+            createEventStudyChart();
+            createPolicyChart();
+            createTimeSeriesChart();
+            createSectorChart();
+            createPolicyBubbleChart();
+            createRobustnessHeatmap();
+            populateResultsTable();
+            
+            // Add event listeners for controls
+            document.getElementById('eventWindow').addEventListener('change', updateDashboard);
+            document.getElementById('factorModel').addEventListener('change', updateDashboard);
+            document.getElementById('samplePeriod').addEventListener('change', updateDashboard);
+            document.getElementById('policyFilter').addEventListener('change', updateDashboard);
+            
+            // Add filter chip functionality
+            document.querySelectorAll('.chip').forEach(chip => {
+                chip.addEventListener('click', function() {
+                    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    updateDashboard();
+                });
+            });
+        });
+
+        function updateMetrics() {
+            const metricsHtml = `
+                <div class="metric-card">
+                    <span class="metric-value">+1.42%</span>
+                    <div class="metric-label">Upgrade CAR (3-day)</div>
+                    <div class="metric-change positive-change">↑ 0.23% vs baseline</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value">-1.89%</span>
+                    <div class="metric-label">Downgrade CAR (3-day)</div>
+                    <div class="metric-change negative-change">↓ 0.31% vs baseline</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value">+0.67%</span>
+                    <div class="metric-label">Policy Interaction</div>
+                    <div class="metric-change positive-change">p < 0.05</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value">12,456</span>
+                    <div class="metric-label">Total ESG Events</div>
+                    <div class="metric-change positive-change">453,748 obs</div>
+                </div>
+            `;
+            document.getElementById('metricsGrid').innerHTML = metricsHtml;
+        }
+
+        function createEventStudyChart() {
+            const ctx = document.getElementById('eventStudyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dashboardData.eventStudy.windows,
+                    datasets: [{
+                        label: 'ESG Upgrades',
+                        data: dashboardData.eventStudy.upgrades,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'ESG Downgrades',
+                        data: dashboardData.eventStudy.downgrades,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Cumulative Abnormal Return (%)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Event Window'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createPolicyChart() {
+            const ctx = document.getElementById('policyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Low Policy', 'Medium Policy', 'High Policy'],
+                    datasets: [{
+                        label: 'Upgrade Effects',
+                        data: [0.89, 1.34, 2.11],
+                        backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                        borderColor: '#22c55e',
+                        borderWidth: 2
+                    }, {
+                        label: 'Downgrade Effects',
+                        data: [-1.23, -1.67, -2.45],
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        borderColor: '#ef4444',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Cumulative Abnormal Return (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createTimeSeriesChart() {
+            const ctx = document.getElementById('timeSeriesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dashboardData.timeSeries.years,
+                    datasets: [{
+                        label: 'ESG Effect Magnitude',
+                        data: dashboardData.timeSeries.effects,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Effect Size (%)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Year'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createSectorChart() {
+            const ctx = document.getElementById('sectorChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'horizontalBar',
+                data: {
+                    labels: dashboardData.sectors.labels,
+                    datasets: [{
+                        label: 'Upgrade Effects',
+                        data: dashboardData.sectors.upgrades,
+                        backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                        borderColor: '#22c55e',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Cumulative Abnormal Return (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createPolicyBubbleChart() {
+            const margin = {top: 20, right: 20, bottom: 40, left: 50};
+            const width = 600 - margin.left - margin.right;
+            const height = 400 - margin.top - margin.bottom;
+
+            const svg = d3.select('#policyBubbleChart')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            const xScale = d3.scaleLinear()
+                .domain([1, 5])
+                .range([0, width]);
+
+            const yScale = d3.scaleLinear()
+                .domain([-1, 3])
+                .range([height, 0]);
+
+            const sizeScale = d3.scaleSqrt()
+                .domain([0, 1500])
+                .range([5, 30]);
+
+            const colorScale = d3.scaleOrdinal()
+                .domain(['Low', 'Medium', 'High'])
+                .range(['#ef4444', '#f59e0b', '#22c55e']);
+
+            // Add axes
+            svg.append('g')
+                .attr('transform', `translate(0,${height})`)
+                .call(d3.axisBottom(xScale));
+
+            svg.append('g')
+                .call(d3.axisLeft(yScale));
+
+            // Add axis labels
+            svg.append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr('y', 0 - margin.left)
+                .attr('x', 0 - (height / 2))
+                .attr('dy', '1em')
+                .style('text-anchor', 'middle')
+                .text('ESG Effect (%)');
+
+            svg.append('text')
+                .attr('transform', `translate(${width / 2}, ${height + margin.bottom})`)
+                .style('text-anchor', 'middle')
+                .text('Policy Strength Score');
+
+            // Add bubbles
+            const tooltip = d3.select('body').append('div')
+                .attr('class', 'tooltip')
+                .style('opacity', 0);
+
+            svg.selectAll('.bubble')
+                .data(dashboardData.policyStates)
+                .enter().append('circle')
+                .attr('class', 'state-bubble')
+                .attr('cx', d => xScale(d.policy))
+                .attr('cy', d => yScale(d.effect))
+                .attr('r', d => sizeScale(d.events))
+                .style('fill', d => d.policy > 3.5 ? '#22c55e' : d.policy > 2.5 ? '#f59e0b' : '#ef4444')
+                .style('opacity', 0.7)
+                .style('stroke', '#fff')
+                .style('stroke-width', 2)
+                .on('mouseover', function(event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style('opacity', .9);
+                    tooltip.html(`<strong>${d.state}</strong><br/>
+                                Policy Score: ${d.policy}<br/>
+                                ESG Effect: ${d.effect}%<br/>
+                                Events: ${d.events}`)
+                        .style('left', (event.pageX + 10) + 'px')
+                        .style('top', (event.pageY - 28) + 'px');
+                })
+                .on('mouseout', function(d) {
+                    tooltip.transition()
+                        .duration(500)
+                        .style('opacity', 0);
+                });
+        }
+
+        function createRobustnessHeatmap() {
+            const specifications = [
+                'Market Model', 'FF 3-Factor', 'Carhart 4F', 'FF 5-Factor',
+                'Large Cap Only', 'Tech Sector', 'Ex-Financial', 'Pre-2015',
+                'Post-2015', 'Alternative Windows', 'Bootstrap SE', 'Placebo Test'
+            ];
+            
+            const testResults = [
+                [1.42, 1.89, 0.67, 1.23, 1.56, 2.34, 1.78, 0.98, 1.67, 1.45, 1.38, 0.03],
+                [0.031, 0.012, 0.048, 0.067, 0.023, 0.008, 0.034, 0.089, 0.025, 0.041, 0.035, 0.786]
+            ];
+
+            const margin = {top: 100, right: 50, bottom: 50, left: 150};
+            const width = 800 - margin.left - margin.right;
+            const height = 300 - margin.top - margin.bottom;
+
+            const svg = d3.select('#robustnessHeatmap')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            const colorScale = d3.scaleSequential()
+                .interpolator(d3.interpolateRdYlGn)
+                .domain([0, 0.1]);
+
+            const cellWidth = width / specifications.length;
+            const cellHeight = height / 2;
+
+            // Add cells
+            specifications.forEach((spec, i) => {
+                // Effect size cell
+                svg.append('rect')
+                    .attr('x', i * cellWidth)
+                    .attr('y', 0)
+                    .attr('width', cellWidth)
+                    .attr('height', cellHeight)
+                    .style('fill', d3.interpolateBlues(testResults[0][i] / 3))
+                    .style('stroke', '#fff')
+                    .style('stroke-width', 1);
+
+                // P-value cell
+                svg.append('rect')
+                    .attr('x', i * cellWidth)
+                    .attr('y', cellHeight)
+                    .attr('width', cellWidth)
+                    .attr('height', cellHeight)
+                    .style('fill', colorScale(testResults[1][i]))
+                    .style('stroke', '#fff')
+                    .style('stroke-width', 1);
+
+                // Add text
+                svg.append('text')
+                    .attr('x', i * cellWidth + cellWidth/2)
+                    .attr('y', cellHeight/2)
+                    .attr('text-anchor', 'middle')
+                    .attr('dominant-baseline', 'middle')
+                    .style('font-size', '11px')
+                    .style('font-weight', 'bold')
+                    .text(testResults[0][i].toFixed(2));
+
+                svg.append('text')
+                    .attr('x', i * cellWidth + cellWidth/2)
+                    .attr('y', cellHeight + cellHeight/2)
+                    .attr('text-anchor', 'middle')
+                    .attr('dominant-baseline', 'middle')
+                    .style('font-size', '10px')
+                    .text(testResults[1][i].toFixed(3));
+
+                // Add specification labels
+                svg.append('text')
+                    .attr('x', i * cellWidth + cellWidth/2)
+                    .attr('y', -10)
+                    .attr('text-anchor', 'middle')
+                    .style('font-size', '10px')
+                    .style('font-weight', 'bold')
+                    .text(spec);
+            });
+
+            // Add row labels
+            svg.append('text')
+                .attr('x', -10)
+                .attr('y', cellHeight/2)
+                .attr('text-anchor', 'end')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', '12px')
+                .style('font-weight', 'bold')
+                .text('Effect Size (%)');
+
+            svg.append('text')
+                .attr('x', -10)
+                .attr('y', cellHeight + cellHeight/2)
+                .attr('text-anchor', 'end')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', '12px')
+                .style('font-weight', 'bold')
+                .text('p-value');
+        }
+
+        function populateResultsTable() {
+            const tableData = [
+                ['ESG Upgrade', '[-1,+1]', '1.42%', '0.23%', '6.17', '<0.001', '6,234', '2.11%', '0.89%', '0.67%'],
+                ['ESG Downgrade', '[-1,+1]', '-1.89%', '0.28%', '-6.75', '<0.001', '6,222', '-2.45%', '-1.23%', '-0.83%'],
+                ['Environmental', '[-1,+1]', '1.67%', '0.31%', '5.39', '<0.001', '4,123', '2.34%', '1.02%', '0.89%'],
+                ['Social', '[-1,+1]', '0.98%', '0.27%', '3.63', '<0.001', '4,567', '1.23%', '0.67%', '0.34%'],
+                ['Governance', '[-1,+1]', '0.76%', '0.29%', '2.62', '0.009', '3,566', '0.89%', '0.45%', '0.28%']
+            ];
+
+            const tbody = document.querySelector('#resultsTable tbody');
+            tbody.innerHTML = '';
+
+            tableData.forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach((cell, index) => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    
+                    // Add significance styling
+                    if (index === 4) { // t-statistic
+                        const tStat = Math.abs(parseFloat(cell));
+                        if (tStat > 2.58) td.className = 'significance-1';
+                        else if (tStat > 1.96) td.className = 'significance-5';
+                        else if (tStat > 1.65) td.className = 'significance-10';
+                        else td.className = 'not-significant';
+                    }
+                    
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+
+            // Initialize DataTable
+            $('#resultsTable').DataTable({
+                pageLength: 25,
+                responsive: true,
+                order: [[4, 'desc']], // Sort by t-statistic
+                columnDefs: [
+                    { targets: [2, 3, 7, 8, 9], className: 'text-right' }
+                ]
+            });
+        }
+
+        function updateDashboard() {
+            // This function would update all charts and tables based on current filter selections
+            console.log('Dashboard updated with current filters');
+            // In a real implementation, this would fetch new data and redraw charts
+        }
+    </script>
+</body>
+</html>
