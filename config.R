@@ -103,7 +103,7 @@ ESG_NUMERIC_MAP <- c(
 )
 
 # ESG leaders vs laggards threshold
-ESG_LEADER_THRESHOLD <- 2  # Numeric score <= 2 is "Leader"
+ESG_LEADER_THRESHOLD <- 3  # Numeric score <= 3 is "Leader" (Negligible, Low, or Medium)
 
 # Missing value indicators
 MISSING_CODES <- c("", "NA", "N/A", "#N/A", "NULL", "None")
