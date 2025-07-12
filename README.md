@@ -1,7 +1,8 @@
 # ESG Rating Changes and Stock Returns: A State Policy Analysis 📊🏛️📈
 
 [![Status](https://img.shields.io/badge/Status-Phase%206%20Policy%20Extension%20Complete-brightgreen)](https://github.com/pollywhiten/esg_dissertation_project)
-[![R](https://img.shields.io/badge/R-4.5.1+-276DC3?style=flat&logo=r&logoColor=white)](https://www.r-project.org/)### 🎯 **Next Phases:**[![renv](https://img.shields.io/badge/renv-1.1.4-00599C?style=flat&logo=r&logoColor=white)](https://rstudio.github.io/renv/)
+[![R](https://img.shields.io/badge/R-4.5.1+-276DC3?style=flat&logo=r&logoColor=white)](https://www.r-project.org)
+[![renv](https://img.shields.io/badge/renv-1.1.4-00599C?style=flat&logo=r&logoColor=white)](https://rstudio.github.io/renv/)
 [![tidyverse](https://img.shields.io/badge/tidyverse-2.0.0+-1A162D?style=flat&logo=tidyverse&logoColor=white)](https://www.tidyverse.org/)
 [![plm](https://img.shields.io/badge/plm-2.6.6+-4CAF50?style=flat)](https://cran.r-project.org/package=plm)
 [![Environment](https://img.shields.io/badge/Environment-Ready-brightgreen?style=flat)](./#environment-status)
@@ -344,7 +345,7 @@ The final data pipeline has successfully created a comprehensive analytical data
 - **Portfolio Windows**: 35,348 observations in 12-month event windows
 - **Data Integration**: ESG ratings + Financial returns + Fama-French factors + State policies
 
-### � **Next Phases:**
+### 🎯 **Next Phases:**
 
 **Phase 6 Complete:**
 - **Phase 6.1**: ✅ Policy data merger (state environmental policies integrated)
