@@ -37,7 +37,7 @@ renv/
 ERD.txt
 ERD.py
 *.py
-*.html
 PROJECT_DOCUMENTATION.md
+PROJECT_DOCUMENTATION.html
 *.csv
 plan.md
