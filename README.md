@@ -1,27 +1,7 @@
 # ESG Rating Changes and Stock Returns: A State Policy Analysis 📊🏛️📈
 
 [![Status](https://img.shields.io/badge/Status-Phase%206%20Policy%20Extension%20Complete-brightgreen)](https://github.com/pollywhiten/esg_dissertation_project)
-[![R](https://img.shields.io/badge/R-4.5.1+-276DC3?style=flat&logo=r&logoColor=wh### ⏭️ **Next Phases:**
-
-**Upcoming ### ⏭️ **Next Phases:**
-
-**Ready for Phase 7:**
-
-- **Phase 7**: Supplementary analysis (leaders vs laggards, control groups, value-weighted analysis)
-- **Phase 8**: Visualization and publication-ready outputs  
-- **Phase 9**: Documentation and final validations
-
-**Upcoming Phase 7 Components:**
-
-- **Phase 7.1**: Leaders vs laggards analysis (firm-level heterogeneity)
-- **Phase 7.2**: Value-weighted analysis deep dive
-- **Phase 7.3**: Control group analysis (unchanged ESG firms)
-- **Phase 8**: Comprehensive visualization suite
-- **Phase 9**: Final documentation and reproducibility checks
-- **Phase 7**: Supplementary analysis (leaders vs laggards, control groups, value-weighted analysis)
-- **Phase 8**: Visualization and publication-ready outputs
-- **Phase 9**: Documentation and final validations://www.r-project.org/)
-[![renv](https://img.shields.io/badge/renv-1.1.4-00599C?style=flat&logo=r&logoColor=white)](https://rstudio.github.io/renv/)
+[![R](https://img.shields.io/badge/R-4.5.1+-276DC3?style=flat&logo=r&logoColor=white)](https://www.r-project.org/)### 🎯 **Next Phases:**[![renv](https://img.shields.io/badge/renv-1.1.4-00599C?style=flat&logo=r&logoColor=white)](https://rstudio.github.io/renv/)
 [![tidyverse](https://img.shields.io/badge/tidyverse-2.0.0+-1A162D?style=flat&logo=tidyverse&logoColor=white)](https://www.tidyverse.org/)
 [![plm](https://img.shields.io/badge/plm-2.6.6+-4CAF50?style=flat)](https://cran.r-project.org/package=plm)
 [![Environment](https://img.shields.io/badge/Environment-Ready-brightgreen?style=flat)](./#environment-status)
@@ -366,14 +346,16 @@ The final data pipeline has successfully created a comprehensive analytical data
 
 ### � **Next Phases:**
 
-**Phase 5 Continuation:**
-- **Phase 5.4**: Carhart 4-factor robustness checks
-- **Phase 5.5**: Subsample analysis (post-2016 period)
+**Phase 6 Complete:**
+- **Phase 6.1**: ✅ Policy data merger (state environmental policies integrated)
+- **Phase 6.2**: ✅ Interaction term construction (DiD framework)
+- **Phase 6.3**: ✅ Panel regression analysis (no significant moderation effect found)
+- **Phase 6.4**: ✅ Robustness checks (0/10 tests significant, confirming null result)
 
 **Upcoming Phases:**
-- **Phase 6**: Policy moderation analysis (state environmental policies)
-- **Phase 7**: Supplementary analysis (leaders vs laggards, control groups)
+- **Phase 7**: Supplementary analysis (leaders vs laggards, control groups, value-weighted analysis)
 - **Phase 8**: Visualization and publication-ready outputs
+- **Phase 9**: Final documentation and validation
 
 ### Environment Metrics
 
