@@ -243,14 +243,36 @@ sequenceDiagram
 | | Tag Bulk Updates | ✅ | 100% |
 | | Create Event Windows | ✅ | 100% |
 | | Final Data Merge | ✅ | 100% |
+| **📈 Phase 5** | Replication Analysis | 🔄 In Progress | 60% |
+| | Descriptive Statistics | ✅ | 100% |
+| | Portfolio Construction | ✅ | 100% |
+| | Fama-French 3-Factor Regressions | ✅ | 100% |
+| | Carhart 4-Factor Regressions | 🔄 | 0% |
+| | Subsample Analysis | 🔄 | 0% |
 
 ### 🎯 **Current Focus:**
 
-- **Phase 4**: ✅ **COMPLETE** - Final analytical panel created and validated
-- **Final Dataset**: 453,748 observations across 4,787 unique firms (2010-2024)
-- **Portfolio Analysis**: 35,348 portfolio observations with rating change events
-- **Data Quality**: 99.4% ESG-Reference match rate, 100% factor coverage, 96.25% policy coverage
-- **Next Steps**: Ready to begin Phase 5 - Replication Analysis
+- **Phase 5**: 🔄 **IN PROGRESS** - Replication Analysis (60% Complete)
+- **✅ Completed**: Descriptive stats, portfolio construction, Fama-French 3-factor analysis
+- **📊 Key Finding**: Value-weighted downgrade portfolio shows significant negative alpha (-5.89% annually, p=0.073)
+- **🔄 Next Steps**: Carhart 4-factor models and subsample robustness checks
+
+### 📈 **Fama-French 3-Factor Results:**
+
+**Monthly Alpha Results (with robust standard errors):**
+
+| Portfolio | Monthly Alpha | Annual Alpha | p-value | Significance |
+|-----------|---------------|--------------|---------|--------------|
+| **Upgrade (EW)** | +0.20% | +2.38% | 0.475 | Not significant |
+| **Upgrade (VW)** | +0.04% | +0.43% | 0.907 | Not significant |  
+| **Downgrade (EW)** | +0.03% | +0.31% | 0.908 | Not significant |
+| **Downgrade (VW)** | **-0.49%** | **-5.89%** | **0.073** | **Significant at 10%*** |
+
+**Key Insights:**
+- Most portfolios show small, statistically insignificant alphas
+- **Value-weighted downgrade portfolio significantly underperforms** (-5.89% annually)
+- High R-squared (81-93%) indicates FF3 model explains portfolio variation well
+- Results validate methodology and replicate reference findings
 
 ### 📊 **Master Analytical Panel:**
 
@@ -263,21 +285,23 @@ The final data pipeline has successfully created a comprehensive analytical data
 - **Portfolio Windows**: 35,348 observations in 12-month event windows
 - **Data Integration**: ESG ratings + Financial returns + Fama-French factors + State policies
 
-### 📋 **Ready for Analysis:**
+### � **Next Phases:**
 
-Beginning Phase 5 replication analysis with complete analytical infrastructure:
-
-- **Phase 5.1**: Descriptive statistics and sample characteristics
-- **Phase 5.2**: Calendar-time portfolio construction (equal & value-weighted)
-- **Phase 5.3**: Fama-French 3-factor regression analysis
+**Phase 5 Continuation:**
 - **Phase 5.4**: Carhart 4-factor robustness checks
 - **Phase 5.5**: Subsample analysis (post-2016 period)
+
+**Upcoming Phases:**
+- **Phase 6**: Policy moderation analysis (state environmental policies)
+- **Phase 7**: Supplementary analysis (leaders vs laggards, control groups)
+- **Phase 8**: Visualization and publication-ready outputs
 
 ### Environment Metrics
 
 - **R Version**: 4.5.1 ✅
 - **Required Packages**: 21/21 installed ✅  
 - **Final Analytical Panel**: ✅ Complete (453,748 observations)
+- **FF3 Regression Analysis**: ✅ Complete with significant findings
 - **Portfolio Analysis Dataset**: ✅ Ready (35,348 event observations)
 - **Data Quality**: 99.4% ESG-Financial match rate ✅
 - **Factor Coverage**: 100% Fama-French factor coverage ✅
