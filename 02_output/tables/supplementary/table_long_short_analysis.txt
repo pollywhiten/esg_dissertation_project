@@ -1,0 +1,18 @@
+Long-Short Portfolio Analysis: Upgrades - Downgrades (Value-Weighted)
+============================================================
+
+Fama-French 3-Factor Model Results:
+
+t test of coefficients:
+
+            Estimate Std. Error t value Pr(>|t|)
+(Intercept)  0.00527    0.00384    1.37     0.17
+mkt_rf       0.05290    0.08703    0.61     0.55
+smb         -0.13948    0.12705   -1.10     0.28
+hml         -0.09817    0.09408   -1.04     0.30
+
+
+🎯 Key Finding: The Long-Short portfolio alpha is 0.0053 with a p-value of 0.175.
+
+Interpretation:
+The alpha is not statistically significant, suggesting no abnormal returns from the long-short strategy.
