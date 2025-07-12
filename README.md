@@ -1,7 +1,13 @@
 # ESG Rating Changes and Stock Returns: A State Policy Analysis 📊🏛️📈
 
 [![Status](https://img.shields.io/badge/Status-Phase%204%20Feature%20Engineering%20Complete-brightgreen)](https://github.com/pollywhiten/esg_dissertation_project)
-[![R](https://img.shields.io/badge/R-4.5.1+-276DC3?style=flat&logo=r&logoColor=white)](https://www.r-project.org/)
+[![R](https://img.shields.io/badge/R-4.5.1+-276DC3?style=flat&logo=r&logoColor=wh### ⏭️ **Next Phases:**
+
+**Upcoming Phases:**
+
+- **Phase 7**: Supplementary analysis (leaders vs laggards, control groups, value-weighted analysis)
+- **Phase 8**: Visualization and publication-ready outputs
+- **Phase 9**: Documentation and final validations://www.r-project.org/)
 [![renv](https://img.shields.io/badge/renv-1.1.4-00599C?style=flat&logo=r&logoColor=white)](https://rstudio.github.io/renv/)
 [![tidyverse](https://img.shields.io/badge/tidyverse-2.0.0+-1A162D?style=flat&logo=tidyverse&logoColor=white)](https://www.tidyverse.org/)
 [![plm](https://img.shields.io/badge/plm-2.6.6+-4CAF50?style=flat)](https://cran.r-project.org/package=plm)
@@ -249,13 +255,18 @@ sequenceDiagram
 | | Fama-French 3-Factor Regressions | ✅ | 100% |
 | | Carhart 4-Factor Regressions | ✅ | 100% |
 | | Subsample Analysis (Post-2016) | ✅ | 100% |
+| **🏛️ Phase 6** | Policy Extension Analysis | ✅ Complete | 100% |
+| | Merge Policy Data (ACEEE & RPS) | ✅ | 100% |
+| | Construct Policy Interactions | ✅ | 100% |
+| | Panel Regression Analysis | ✅ | 100% |
 
 ### 🎯 **Current Focus:**
 
-- **Phase 5**: ✅ **COMPLETE** - Replication Analysis with robust findings
-- **✅ Key Achievement**: Significant negative alpha for VW downgrade portfolio (-5.89% annually)
-- **✅ Robustness Confirmed**: Results hold across FF3, Carhart 4F, and temporal subsample analysis
-- **🔄 Next Steps**: Ready to begin Phase 6 - Policy Extension Analysis
+- **Phase 6**: ✅ **COMPLETE** - Policy Extension Analysis
+- **✅ Key Finding**: No significant policy moderation effect (interaction p = 0.868)
+- **✅ Method**: Panel regression with state environmental policy interactions
+- **✅ Robustness**: Multiple policy measures tested, alternative specifications confirmed
+- **🔄 Next Steps**: Ready to begin Phase 7 - Supplementary Analysis
 
 ### 📈 **Comprehensive Replication Results:**
 
@@ -271,11 +282,33 @@ sequenceDiagram
 | **Post-2016 Sample** | **Downgrade (VW)** | **-0.49%** | **-5.89%** | **0.073** | **Significant*** |
 
 **Key Insights:**
+
 - **Remarkably consistent results** across all robustness checks
 - **ESG downgrade penalty is robust** to factor model specification and time period
 - **Value-weighted portfolios drive the effect** (equal-weighted portfolios show minimal impact)
 - **Modern ESG era persistence** - effect remains strong post-2016
 - **Economic significance** - ~6% annual underperformance is substantial
+
+### 🏛️ **Policy Extension Results:**
+
+**Panel Regression Analysis - State Environmental Policy Moderation:**
+
+| Model | Downgrade Effect | Policy Interaction | Economic Significance | Result |
+|-------|------------------|-------------------|----------------------|---------|
+| **Baseline Model** | -0.14% | - | - | Not significant |
+| **Main Interaction** | -0.16% | **+0.06%** | 0.7% annual difference | **Not significant (p = 0.868)** |
+| **Continuous Rank** | -0.15% | -0.01% | Minimal | Not significant |
+| **RPS Alternative** | -0.14% | +0.19% | Small effect | Not significant |
+
+**Key Policy Findings:**
+
+- **No significant moderation effect**: State environmental policies do not significantly alter the ESG downgrade penalty
+- **Consistent across specifications**: Multiple policy measures (ACEEE rankings, RPS presence) yield similar null results
+- **Economic interpretation**: While point estimates suggest potential 0.7% annual mitigation, effect lacks statistical power
+- **Treatment groups well-balanced**: 410K+ observations across control, policy-only, downgrade-only, and treatment groups
+- **Robustness confirmed**: Results hold excluding bulk ESG updates and across firm size categories
+
+**Key Insights:**
 
 ### 📊 **Master Analytical Panel:**
 
