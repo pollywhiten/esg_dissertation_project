@@ -1,0 +1,11 @@
+COMPREHENSIVE RESULTS SUMMARY
+============================
+
+Key Findings:
+1. ESG Upgrades: 0.036% monthly alpha (p=0.907)
+2. ESG Downgrades: -0.491% monthly alpha (p=0.073)
+3. Policy moderation effects: Mixed evidence across measures
+4. Temporal stability: Effect stronger in recent period
+
+Statistical significance: *** p<0.01, ** p<0.05, * p<0.10
+HTML tables available in: output/tables/summary/
